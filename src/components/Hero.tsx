@@ -25,7 +25,7 @@ const Hero = () => {
       <div className="relative z-10 container mx-auto px-4 py-20 text-center">
         <div className="max-w-4xl mx-auto space-y-8 animate-fade-in-up">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-primary-foreground leading-tight">
-            Nyaman • Terbimbing • Sunnah
+            Nyaman, Terbimbing, Sunnah
           </h1>
           
           <p className="text-lg md:text-xl lg:text-2xl text-primary-foreground/90 font-light max-w-3xl mx-auto leading-relaxed">
