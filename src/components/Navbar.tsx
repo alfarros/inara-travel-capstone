@@ -6,12 +6,18 @@ import { Link } from 'react-router-dom'; // Jika pakai React Router
 
 export default function Navbar() {
   return (
-    <nav className="bg-primary text-white shadow-md">
+    <nav className="bg-cream text-gray-800 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <span className="text-xl font-bold">Inara Travel</span>
+              <Link to="/" className="flex items-center">
+            <img
+              src="/logo-inara.png" // Simpan di public/logo-inara.png
+              alt="Inara Travel"
+              className="h-16 w-auto"
+            />
+          </Link>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:items-center sm:space-x-8">
               <NavigationMenu.NavigationMenu>
@@ -31,6 +37,7 @@ export default function Navbar() {
                       <Link to="/about" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-secondary">Tentang Kami</Link>
                     </NavigationMenu.NavigationMenuLink>
                   </NavigationMenu.NavigationMenuItem>
+
                   <NavigationMenu.NavigationMenuItem>
                     <NavigationMenu.NavigationMenuLink asChild>
                       <Link to="/contact" className="px-3 py-2 rounded-md text-sm font-medium hover:bg-secondary">Kontak</Link>

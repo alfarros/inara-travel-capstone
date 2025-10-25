@@ -22,16 +22,16 @@ const Footer = () => {
               <li className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
                 <span className="text-primary-foreground/80">
-                  Jl. Raya Umrah No. 123, Jakarta Selatan 12345
+                  Jl. Tidak tahu menahu 404, Atlantis, Indonesia
                 </span>
               </li>
               <li className="flex items-center gap-2">
                 <Phone className="w-4 h-4 flex-shrink-0" />
                 <a 
-                  href="tel:+6281234567890" 
+                  href="tel:+6282281924357" 
                   className="text-primary-foreground/80 hover:text-accent transition-colors"
                 >
-                  +62 812-3456-7890
+                  +62 822-8192-4357
                 </a>
               </li>
               <li className="flex items-center gap-2">
