@@ -1,77 +1,59 @@
-# /module_2_recommender/app/models.py
-from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, BIGINT, FLOAT, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+# /module_payments/app/models.py
+from sqlalchemy import Column, Integer, String, Text, DateTime, BIGINT, ForeignKey
+from sqlalchemy.orm import relationship, declarative_base
 from datetime import datetime
 
 Base = declarative_base()
 
+# ========================
+# MODEL USER
+# ========================
 class User(Base):
     __tablename__ = "users"
-    user_id = Column(Integer, primary_key=True)
+
+    user_id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, nullable=False)
-    # ... (kolom user lain jika diperlukan oleh modul ini)
-    
-    reviews = relationship("Review", back_populates="user")
+    first_name = Column(String(100))
+    last_name = Column(String(100))
+    phone_number = Column(String(20))
+    hashed_password = Column(String(255))
+
+    # Relasi
     bookings = relationship("Booking", back_populates="user")
 
+
+# ========================
+# MODEL PACKAGE
+# ========================
 class Package(Base):
     __tablename__ = "packages"
-    
-    # --- PERUBAHAN DI SINI ---
-    # SEBELUM: package_id = Column(Integer, primary_key=True)
-    package_id = Column(String(255), primary_key=True, index=True)
-    # -------------------------
 
+    package_id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     price = Column(BIGINT, nullable=False)
     duration_days = Column(Integer)
-    hotel_info = Column(String(500))
     image_url = Column(String(500))
-    
-    reviews = relationship("Review", back_populates="package")
+
+    # Relasi
     bookings = relationship("Booking", back_populates="package")
 
-class Review(Base):
-    __tablename__ = "reviews"
-    review_id = Column(Integer, primary_key=True)
-    
-    # --- PERUBAHAN DI SINI JUGA (JIKA REVIEW PAKAI STRING ID) ---
-    # NOTE: Jika review juga pakai ID string, ubah ini. Tapi berdasarkan
-    # error Anda, fokus utamanya di Booking & Package.
-    # Kita asumsikan package_id di Review merujuk ke package_id string
-    # SEBELUM: package_id = Column(Integer, ForeignKey("packages.package_id"), nullable=False)
-    package_id = Column(String(255), ForeignKey("packages.package_id"), nullable=False)
-    # -----------------------------------------------------------
 
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
-    rating = Column(Integer, nullable=False)
-    comment = Column(Text)
-    sentiment_status = Column(String(50), default="pending")
-    sentiment_score = Column(FLOAT)
-    created_at = Column(DateTime, default=datetime.now)
-    
-    package = relationship("Package", back_populates="reviews")
-    user = relationship("User", back_populates="reviews")
-
+# ========================
+# MODEL BOOKING
+# ========================
 class Booking(Base):
     __tablename__ = "bookings"
-    booking_id = Column(Integer, primary_key=True)
+
+    booking_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
-
-    # --- PERUBAHAN DI SINI ---
-    # Ini adalah Foreign Key, harus cocok dengan tipe data di Package
-    # SEBELUM: package_id = Column(Integer, ForeignKey("packages.package_id"), nullable=False)
-    package_id = Column(String(255), ForeignKey("packages.package_id"), nullable=False)
-    # -------------------------
-
+    package_id = Column(Integer, ForeignKey("packages.package_id"), nullable=False)
     order_id = Column(String(255), unique=True, nullable=False)
     total_amount = Column(BIGINT, nullable=False)
     status = Column(String(50), default="pending")
-    
-    # Tambahan: Kolom untuk menyimpan URL Midtrans (dari main.py Anda)
     midtrans_redirect_url = Column(String(500), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
+    # Relasi
     user = relationship("User", back_populates="bookings")
     package = relationship("Package", back_populates="bookings")
