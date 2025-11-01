@@ -1,0 +1,6 @@
+package_id,name,description,price,duration,hotel_stars,destination,category
+PKG001,Umrah Reguler 9 Hari,"Paket Umrah standar dengan akomodasi Bintang 4. Dekat Masjidil Haram.",19500000,9,4,Makkah/Madinah,Umrah Reguler
+PKG002,Umrah Plus Turki 12 Hari,"Mengunjungi Istanbul dan Bursa sebelum Umrah. Hotel Bintang 5.",29000000,12,5,Turki/Makkah/Madinah,Umrah Plus
+PKG003,Haji Plus Cepat,"Paket Haji dengan antrian lebih cepat (5 tahun). Akomodasi eksklusif.",150000000,25,5,Makkah/Madinah,Haji Plus
+PKG004,Umrah Premium Ramadhan,"Umrah selama bulan suci Ramadhan. Hotel Bintang 5, full board.",35000000,10,5,Makkah/Madinah,Umrah Premium
+PKG005,Umrah Ekonomis 14 Hari,"Paket panjang, lebih hemat. Hotel Bintang 3. Cocok untuk backpaker rohani.",16000000,14,3,Makkah/Madinah,Umrah Reguler

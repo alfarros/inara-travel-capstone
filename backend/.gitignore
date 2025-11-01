@@ -1,0 +1,42 @@
+# #################################
+# 1. ABAIKAN MODUL YANG TIDAK DIINGINKAN
+# #################################
+# Tambahkan slash (/) di awal agar hanya folder di root yang diabaikan
+/module_5_pricing_monitor/
+/module_6_reporting/
+
+
+# #################################
+# 2. ABAIKAN FILE SENSITIF (SANGAT PENTING!)
+# #################################
+# Ini akan mengabaikan SEMUA file .env di SEMUA folder
+# Ini MENCEGAH API Key, Password DB, dan Token Anda bocor ke GitHub
+*.env
+.env.*
+
+
+# #################################
+# 3. ABAIKAN FILE "NOISE" (Python & Lainnya)
+# #################################
+# Cache Python
+__pycache__/
+*.pyc
+
+# Folder virtual environment Python
+venv/
+.venv/
+env/
+.env/
+
+# Folder dependensi Node.js (jika ada)
+node_modules/
+
+# Cache dan log Docker
+docker-compose.override.yml
+
+# File sistem operasi
+.DS_Store
+Thumbs.db
+
+# File editor (VS Code)
+.vscode/

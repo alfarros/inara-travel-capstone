@@ -1,0 +1,28 @@
+# #################################
+# 1. ABAIKAN FILE SENSITIF (SEMUA FOLDER)
+# #################################
+# Ini akan mengabaikan SEMUA file .env di /frontend dan /backend
+**/*.env
+**/.env.*
+
+# #################################
+# 2. ABAIKAN FOLDER BACKEND SPESIFIK
+# #################################
+# (Abaikan modul yang tidak Anda inginkan)
+/backend/module_5_pricing_monitor/
+/backend/module_6_reporting/
+
+# #################################
+# 3. ABAIKAN "NOISE" UMUM
+# #################################
+
+# Backend (Python)
+/backend/__pycache__/
+/backend/*/__pycache__/
+/backend/venv/
+/backend/.venv/
+
+# Frontend (Node.js)
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.DS_Store

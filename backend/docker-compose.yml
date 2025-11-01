@@ -1,0 +1,227 @@
+# /haji_umrah_platform/docker-compose.yml - VERSI TANPA EVOLUTION API
+
+services:
+  # ----------------------------------
+  # SHARED SERVICES
+  # ----------------------------------
+  postgres-db:
+    image: postgres:14-alpine
+    container_name: postgres-db
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=adminpass
+      - POSTGRES_DB=haji_umrah_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./module_5_pricing_monitor/db_schema.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - haji_umrah_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d haji_umrah_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-cache:
+    image: redis:7-alpine
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+    networks:
+      - haji_umrah_net
+    restart: unless-stopped
+
+  # ----------------------------------
+  # MODULE 1: AI Chatbot
+  # ----------------------------------
+  chatbot-api:
+    build:
+      context: ./module_1_chatbot
+    container_name: chatbot-api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8008 --reload
+    ports:
+      - "8008:8008"
+    volumes:
+      - ./module_1_chatbot/chroma_db:/app/chroma_db
+      - ./module_1_chatbot/app:/app/app
+      - huggingface_cache:/root/.cache/huggingface
+    env_file:
+      - ./module_1_chatbot/.env
+    restart: unless-stopped
+    networks:
+      - haji_umrah_net
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  # ----------------------------------
+  # MODULE 2: Recommender System API
+  # ----------------------------------
+  recommender-api:
+    build:
+      context: ./module_2_recommender
+    container_name: recommender-api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./dummy_data:/dummy_data
+      - ./module_2_recommender/models_store:/app/models_store
+      - ./module_2_recommender/app:/app/app
+    restart: unless-stopped
+    networks:
+      - haji_umrah_net
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_started
+
+  # ----------------------------------
+  # MODULE 3: Sentiment & Review Intelligence
+  # ----------------------------------
+  sentiment-dashboard:
+    build:
+      context: ./module_3_sentiment
+    container_name: sentiment-dashboard
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./dummy_data:/dummy_data
+      - ./module_3_sentiment/analysis:/app/analysis
+      - ./module_3_sentiment/scripts:/app/scripts
+      - ./module_3_sentiment/dashboard.py:/app/dashboard.py
+    restart: unless-stopped
+    networks:
+      - haji_umrah_net
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  sentiment-scheduler:
+    build:
+      context: ./module_3_sentiment
+    container_name: sentiment-scheduler
+    command: python scheduler.py
+    volumes:
+      - ./dummy_data:/dummy_data
+      - ./module_3_sentiment/analysis:/app/analysis
+      - ./module_3_sentiment/scripts:/app/scripts
+      - ./module_3_sentiment/scheduler.py:/app/scheduler.py
+    restart: unless-stopped
+    networks:
+      - haji_umrah_net
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  # ----------------------------------
+  # MODULE 4: Predictive Lead Scoring API
+  # ----------------------------------
+  lead-scoring-api:
+    build:
+      context: ./module_4_lead_scoring
+    container_name: lead-scoring-api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./dummy_data:/dummy_data
+      - ./module_4_lead_scoring/model_store:/app/model_store
+      - ./module_4_lead_scoring/app:/app/app
+    restart: unless-stopped
+    networks:
+      - haji_umrah_net
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  # ----------------------------------
+  # MODULE 5: Competitor Price Monitor
+  # ----------------------------------
+  price-monitor-scheduler:
+    build:
+      context: ./module_5_pricing_monitor
+    container_name: price-monitor-scheduler
+    command: python scheduler.py
+    volumes:
+      - ./module_5_pricing_monitor/competitor_targets.json:/app/competitor_targets.json
+      - ./module_5_pricing_monitor/alerting:/app/alerting
+      - ./module_5_pricing_monitor/scrapers:/app/scrapers
+      - ./module_5_pricing_monitor/scheduler.py:/app/scheduler.py
+    restart: unless-stopped
+    networks:
+      - haji_umrah_net
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  price-monitor-dashboard:
+    build:
+      context: ./module_5_pricing_monitor
+    container_name: price-monitor-dashboard
+    ports:
+      - "8502:8502"
+    volumes:
+      - ./module_5_pricing_monitor/dashboard.py:/app/dashboard.py
+    restart: unless-stopped
+    networks:
+      - haji_umrah_net
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  # ----------------------------------
+  # MODULE 6: Automated Reporting
+  # ----------------------------------
+  reporting-scheduler:
+    build:
+      context: ./module_6_reporting
+    container_name: reporting-scheduler
+    volumes:
+      - ./module_6_reporting/connectors:/app/connectors
+      - ./module_6_reporting/distribution:/app/distribution
+      - ./module_6_reporting/generators:/app/generators
+      - ./module_6_reporting/reports:/app/reports
+      - ./module_6_reporting/templates:/app/templates
+      - ./module_6_reporting/scheduler.py:/app/scheduler.py
+      - ./module_6_reporting/.env.reporting:/app/.env.reporting
+    restart: unless-stopped
+    networks:
+      - haji_umrah_net
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  # ----------------------------------
+  # MODULE PAYMENTS (Midtrans)
+  # ----------------------------------
+  payments-api:
+    build:
+      context: ./module_payments
+    container_name: payments-api
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8010 --reload
+    ports:
+      - "8010:8010"
+    volumes:
+      - ./module_payments/app:/app/app
+      - ./module_payments/.env.payments:/app/.env.payments
+    restart: unless-stopped
+    env_file:
+      - ./module_payments/.env.payments
+    networks:
+      - haji_umrah_net
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  huggingface_cache:
+
+networks:
+  haji_umrah_net:
+    driver: bridge

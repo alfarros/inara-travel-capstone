@@ -1,0 +1,11 @@
+# /module_2_recommender/requirements.txt
+fastapi
+uvicorn
+scikit-learn
+pandas
+surprise
+psycopg2-binary
+sqlalchemy
+redis
+numpy<2.0
+

@@ -1,0 +1,11 @@
+# requirements.txt (Perbaikan)
+
+streamlit
+pandas
+psycopg2-binary
+sqlalchemy
+transformers
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+apscheduler
+plotly

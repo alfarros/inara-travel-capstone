@@ -1,0 +1,42 @@
+# Core Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
+# AI & ML
+sentence-transformers==2.3.1
+torch==2.1.2
+transformers==4.37.2
+
+# Vector Database
+chromadb==0.4.22
+
+# HTTP Requests
+requests==2.31.0
+httpx==0.26.0
+
+# Environment & Config
+python-dotenv==1.0.0
+
+# Database (PostgreSQL)
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9
+alembic==1.13.1  # Database migrations
+
+# Authentication & Security
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Email
+# Built-in smtplib & email modules (no additional package needed)
+
+# Utilities
+pydantic==2.5.3
+pydantic-settings==2.1.0
+
+numpy<2.0
+
+sqlalchemy
+psycopg2-binary
+passlib[bcrypt]
+python-jose
