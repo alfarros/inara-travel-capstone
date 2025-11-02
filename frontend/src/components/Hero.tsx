@@ -1,3 +1,6 @@
+// D:\inara-travel-capstone\src\components\Hero.tsx
+// Kode ini sudah benar mengarah ke Chatbot WA
+
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import heroImage from "@/assets/hero-mosque.jpg";
@@ -8,7 +11,14 @@ const Hero = () => {
     const message = encodeURIComponent(
       "Assalamualaikum, saya ingin konsultasi tentang paket umrah"
     );
-    window.open(`https://wa.me/6281234567890?text=${message}`, "_blank");
+    
+    // --- INI NOMOR CHATBOT FONNTE ANDA ---
+    // Pastikan nomor ini SAMA dengan yang terdaftar di Fonnte
+    // dan SAMA dengan 'BUSINESS_WHATSAPP_NUMBER' di .env Anda
+    const phoneNumber = "6289508496619"; 
+    // ------------------------------------
+
+    window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
   }, []);
 
   return (

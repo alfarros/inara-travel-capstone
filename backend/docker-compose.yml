@@ -1,4 +1,5 @@
-# /haji_umrah_platform/docker-compose.yml - VERSI TANPA EVOLUTION API
+# /haji_umrah_platform/docker-compose.yml
+# --- VERSI FINAL DENGAN PATH DB_SCHEMA DIPERBAIKI ---
 
 services:
   # ----------------------------------
@@ -13,7 +14,8 @@ services:
       - POSTGRES_DB=haji_umrah_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./module_5_pricing_monitor/db_schema.sql:/docker-entrypoint-initdb.d/init.sql
+      # [PERBAIKAN] Menggunakan db_schema.sql dari root folder
+      - ./db_schema.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     networks:
@@ -45,11 +47,14 @@ services:
     ports:
       - "8008:8008"
     volumes:
-      - ./module_1_chatbot/chroma_db:/app/chroma_db
       - ./module_1_chatbot/app:/app/app
+      - ./module_1_chatbot/chroma_db:/app/chroma_db
+      - ./module_1_chatbot/scripts:/app/scripts
+      - ./module_1_chatbot/knowledge_base:/app/knowledge_base
       - huggingface_cache:/root/.cache/huggingface
     env_file:
       - ./module_1_chatbot/.env
+    working_dir: /app
     restart: unless-stopped
     networks:
       - haji_umrah_net
@@ -71,6 +76,8 @@ services:
       - ./dummy_data:/dummy_data
       - ./module_2_recommender/models_store:/app/models_store
       - ./module_2_recommender/app:/app/app
+      - ./module_2_recommender/scripts:/app/scripts
+    working_dir: /app
     restart: unless-stopped
     networks:
       - haji_umrah_net
@@ -87,6 +94,7 @@ services:
     build:
       context: ./module_3_sentiment
     container_name: sentiment-dashboard
+    command: streamlit run dashboard.py --server.port 8501 --server.address 0.0.0.0
     ports:
       - "8501:8501"
     volumes:
@@ -94,6 +102,7 @@ services:
       - ./module_3_sentiment/analysis:/app/analysis
       - ./module_3_sentiment/scripts:/app/scripts
       - ./module_3_sentiment/dashboard.py:/app/dashboard.py
+    working_dir: /app
     restart: unless-stopped
     networks:
       - haji_umrah_net
@@ -111,6 +120,8 @@ services:
       - ./module_3_sentiment/analysis:/app/analysis
       - ./module_3_sentiment/scripts:/app/scripts
       - ./module_3_sentiment/scheduler.py:/app/scheduler.py
+      - huggingface_cache:/root/.cache/huggingface
+    working_dir: /app
     restart: unless-stopped
     networks:
       - haji_umrah_net
@@ -132,6 +143,8 @@ services:
       - ./dummy_data:/dummy_data
       - ./module_4_lead_scoring/model_store:/app/model_store
       - ./module_4_lead_scoring/app:/app/app
+      - ./module_4_lead_scoring/scripts:/app/scripts
+    working_dir: /app
     restart: unless-stopped
     networks:
       - haji_umrah_net
@@ -140,7 +153,7 @@ services:
         condition: service_healthy
 
   # ----------------------------------
-  # MODULE 5: Competitor Price Monitor
+  # MODULE 5: Competitor Price Monitor (Sesuai permintaan, tidak diubah)
   # ----------------------------------
   price-monitor-scheduler:
     build:
@@ -152,6 +165,7 @@ services:
       - ./module_5_pricing_monitor/alerting:/app/alerting
       - ./module_5_pricing_monitor/scrapers:/app/scrapers
       - ./module_5_pricing_monitor/scheduler.py:/app/scheduler.py
+    working_dir: /app
     restart: unless-stopped
     networks:
       - haji_umrah_net
@@ -163,10 +177,12 @@ services:
     build:
       context: ./module_5_pricing_monitor
     container_name: price-monitor-dashboard
+    command: streamlit run dashboard.py --server.port 8502 --server.address 0.0.0.0
     ports:
       - "8502:8502"
     volumes:
       - ./module_5_pricing_monitor/dashboard.py:/app/dashboard.py
+    working_dir: /app
     restart: unless-stopped
     networks:
       - haji_umrah_net
@@ -175,12 +191,13 @@ services:
         condition: service_healthy
 
   # ----------------------------------
-  # MODULE 6: Automated Reporting
+  # MODULE 6: Automated Reporting (Sesuai permintaan, tidak diubah)
   # ----------------------------------
   reporting-scheduler:
     build:
       context: ./module_6_reporting
     container_name: reporting-scheduler
+    command: python scheduler.py
     volumes:
       - ./module_6_reporting/connectors:/app/connectors
       - ./module_6_reporting/distribution:/app/distribution
@@ -189,6 +206,7 @@ services:
       - ./module_6_reporting/templates:/app/templates
       - ./module_6_reporting/scheduler.py:/app/scheduler.py
       - ./module_6_reporting/.env.reporting:/app/.env.reporting
+    working_dir: /app
     restart: unless-stopped
     networks:
       - haji_umrah_net
@@ -209,6 +227,7 @@ services:
     volumes:
       - ./module_payments/app:/app/app
       - ./module_payments/.env.payments:/app/.env.payments
+    working_dir: /app
     restart: unless-stopped
     env_file:
       - ./module_payments/.env.payments
