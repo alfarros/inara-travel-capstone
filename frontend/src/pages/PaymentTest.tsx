@@ -42,8 +42,8 @@ const PaymentTestPage = () => {
 
   const paket = {
     id: '1',
-    name: 'Paket Silver',
-    price: 24000000,
+    name: 'Umrah Reguler 9 Hari',
+    price: 19500000,
   };
 
   const handlePayment = async () => {
