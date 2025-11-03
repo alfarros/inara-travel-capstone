@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Star } from "lucide-react";
-import { useState, useCallback, useMemo } from "react";
+import { useState,  useMemo } from "react";
 import { packagesData, Package } from "@/data/packages"; // Import dari file data
 
 interface PackagesProps {
@@ -15,7 +15,7 @@ interface PackagesProps {
   limit?: number;
 }
 
-const Packages = ({ showLoadMore = false, limit = 3 }: PackagesProps) => {
+const PackagesSection = ({ showLoadMore = false, limit = 3 }: PackagesProps) => {
   const [visibleCount, setVisibleCount] = useState(limit);
 
   const loadMore = () => {
@@ -28,15 +28,6 @@ const Packages = ({ showLoadMore = false, limit = 3 }: PackagesProps) => {
       ? packagesData.slice(0, visibleCount)
       : packagesData.slice(0, limit);
   }, [showLoadMore, visibleCount, limit]);
-
-  // useCallback untuk mencegah pembuatan ulang fungsi
-  const handleWhatsAppClick = useCallback((packageTitle: string) => {
-    const message = `Assalamualaikum, saya tertarik dengan ${packageTitle}. Mohon info lebih lanjut.`;
-    window.open(
-      `https://wa.me/6281234567890?text=${encodeURIComponent(message)}`,
-      "_blank"
-    );
-  }, []);
 
   return (
     <section
@@ -58,12 +49,7 @@ const Packages = ({ showLoadMore = false, limit = 3 }: PackagesProps) => {
 
         <div className="grid md:grid-cols-3 gap-8">
           {displayedPackages.map((pkg, index) => (
-            <PackageCard
-              key={pkg.id}
-              pkg={pkg}
-              index={index}
-              onWhatsAppClick={handleWhatsAppClick}
-            />
+            <PackageCard key={pkg.id} pkg={pkg} index={index} />
           ))}
         </div>
 
@@ -90,14 +76,9 @@ const Packages = ({ showLoadMore = false, limit = 3 }: PackagesProps) => {
 interface PackageCardProps {
   pkg: Package;
   index: number;
-  onWhatsAppClick: (title: string) => void;
 }
 
-const PackageCard: React.FC<PackageCardProps> = ({
-  pkg,
-  index,
-  onWhatsAppClick,
-}) => {
+const PackageCard: React.FC<PackageCardProps> = ({ pkg, index }) => {
   return (
     <Card
       className={`overflow-hidden shadow-medium hover:shadow-large transition-all duration-300 hover:-translate-y-2 bg-card border-2 ${
@@ -147,14 +128,14 @@ const PackageCard: React.FC<PackageCardProps> = ({
 
       <CardFooter>
         <Button
-          onClick={() => onWhatsAppClick(pkg.title)}
+          asChild
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-300"
         >
-          Lihat Detail
+          <a href={`/packages/${pkg.id}`}>Lihat Detail</a>
         </Button>
       </CardFooter>
     </Card>
   );
 };
 
-export default Packages;
+export default PackagesSection;

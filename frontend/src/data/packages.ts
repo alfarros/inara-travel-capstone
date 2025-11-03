@@ -5,11 +5,15 @@ export interface Package {
   duration: string;
   price: string;
   features: string[];
-  image: string; // Akan diisi dengan import gambar
+  image: string;
   featured?: boolean;
+  // Tambahkan beberapa field baru agar detail halaman lebih kaya
+  description: string;
+  airline: string;
+  departureCity: string;
 }
 
-// Import gambar di sini agar tidak membebani komponen
+// Import gambar
 import jamaahImage from "@/assets/jamaah-group.jpg";
 
 export const packagesData: Package[] = [
@@ -18,6 +22,10 @@ export const packagesData: Package[] = [
     title: "Paket Premium",
     duration: "9 Hari",
     price: "Rp 28.000.000",
+    description:
+      "Nikmati kemewahan dan kenyamanan pelayanan tertinggi dengan hotel berbintang 5 yang berlokasi sangat dekat dengan Masjidil Haram.",
+    airline: "Garuda Indonesia",
+    departureCity: "Jakarta",
     features: [
       "Hotel Bintang 5 (100m dari Masjidil Haram)",
       "Penerbangan Langsung",
@@ -31,6 +39,10 @@ export const packagesData: Package[] = [
     title: "Paket Silver",
     duration: "12 Hari",
     price: "Rp 24.000.000",
+    description:
+      "Pilihan seimbang antara harga dan fasilitas. Nikmati perjalanan ibadah yang nyaman dengan hotel bintang 4.",
+    airline: "Saudi Arabian Airlines",
+    departureCity: "Jakarta",
     features: [
       "Hotel Bintang 4 (300m dari Masjidil Haram)",
       "Penerbangan Transit 1x",
@@ -45,6 +57,10 @@ export const packagesData: Package[] = [
     title: "Paket Bronze",
     duration: "15 Hari",
     price: "Rp 20.000.000",
+    description:
+      "Pilihan ekonomis untuk menjalankan ibadah umrah dengan pelayanan yang tetap fokus pada kenyamanan dan kelancaran ibadah.",
+    airline: "Batik Air",
+    departureCity: "Surabaya",
     features: [
       "Hotel Bintang 3 (500m dari Masjidil Haram)",
       "Penerbangan Transit 1x",
@@ -58,6 +74,10 @@ export const packagesData: Package[] = [
     title: "Paket Bronze",
     duration: "15 Hari",
     price: "Rp 20.000.000",
+    description:
+      "Pilihan ekonomis untuk menjalankan ibadah umrah dengan pelayanan yang tetap fokus pada kenyamanan dan kelancaran ibadah.",
+    airline: "Batik Air",
+    departureCity: "Surabaya",
     features: [
       "Hotel Bintang 3 (500m dari Masjidil Haram)",
       "Penerbangan Transit 1x",
@@ -66,18 +86,5 @@ export const packagesData: Package[] = [
     ],
     image: jamaahImage,
   },
-  {
-    id: 5,
-    title: "Paket Bronze",
-    duration: "15 Hari",
-    price: "Rp 20.000.000",
-    features: [
-      "Hotel Bintang 3 (500m dari Masjidil Haram)",
-      "Penerbangan Transit 1x",
-      "Breakfast Only",
-      "Ziarah Utama",
-    ],
-    image: jamaahImage,
-  },
-  // ... tambahkan paket lainnya jika perlu, pastikan tidak duplikat
+  // Hapus duplikat dan tambahkan paket lain jika perlu
 ];

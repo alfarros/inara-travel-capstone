@@ -3,7 +3,7 @@ import PackagesSection from "@/components/Packages";
 export default function Packages() {
   return (
     <div className="py-12">
-      <PackagesSection showLoadMore/>
+      <PackagesSection showLoadMore={true}/>
     </div>
   );
 }
