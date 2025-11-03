@@ -1,4 +1,4 @@
-# /module_1_chatbot/app/schemas.py
+# /module_1_chatbot/app/schemas.py (Versi Pangkas)
 from pydantic import BaseModel
 from typing import Optional
 
@@ -6,7 +6,7 @@ from typing import Optional
 class ChatRequest(BaseModel):
     user_id: str
     message: str
-    user_email: Optional[str] = None # Jadikan opsional
+    user_email: Optional[str] = None # Untuk kontak eskalasi
 
 class ChatResponse(BaseModel):
     user_id: str
@@ -15,24 +15,4 @@ class ChatResponse(BaseModel):
     escalated: bool
     escalation_reason: Optional[str] = None
 
-# --- TAMBAHKAN SCHEMA INI ---
-class UserCreate(BaseModel):
-    email: str
-    password: str
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    phone_number: Optional[str] = None
-
-class User(BaseModel):
-    user_id: int
-    email: str
-    first_name: Optional[str] = None
-
-    class Config:
-        from_attributes = True # <<< INI PERBAIKANNYA
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-# (Anda bisa tambahkan schema lain di sini jika diperlukan oleh handler lain,
-# misalnya untuk admin_handler atau whatsapp_handler jika butuh validasi Pydantic)
+# (Semua schema UserCreate, User, dan Token dihapus)

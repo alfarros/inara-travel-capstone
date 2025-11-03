@@ -1,5 +1,4 @@
-# /haji_umrah_platform/docker-compose.yml
-# --- VERSI FINAL LENGKAP (TZ=Asia/Jakarta ditambahkan ke SEMUA service) ---
+# /docker-compose.yml (Versi Pangkas)
 
 services:
   # ----------------------------------
@@ -12,9 +11,10 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=adminpass
       - POSTGRES_DB=haji_umrah_db
-      - TZ=Asia/Jakarta # [FIX] Tambahkan Timezone
+      - TZ=Asia/Jakarta
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Pastikan db_schema.sql ada di folder root backend/
       - ./db_schema.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
@@ -30,7 +30,7 @@ services:
   redis-cache:
     image: redis:7-alpine
     container_name: redis-cache
-    environment: # [FIX] Tambahkan Timezone
+    environment:
       - TZ=Asia/Jakarta
     ports:
       - "6379:6379"
@@ -45,7 +45,7 @@ services:
     build:
       context: ./module_1_chatbot
     container_name: chatbot-api
-    environment: # [FIX] Tambahkan Timezone
+    environment:
       - TZ=Asia/Jakarta
     command: uvicorn app.main:app --host 0.0.0.0 --port 8008 --reload
     ports:
@@ -60,200 +60,6 @@ services:
       - ./module_1_chatbot/.env
     working_dir: /app
     restart: unless-stopped
-    networks:
-      - haji_umrah_net
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-
-  # ----------------------------------
-  # MODULE 2: Recommender System API
-  # ----------------------------------
-  recommender-api:
-    build:
-      context: ./module_2_recommender
-    container_name: recommender-api
-    environment: # [FIX] Tambahkan Timezone
-      - TZ=Asia/Jakarta
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./dummy_data:/dummy_data
-      - ./module_2_recommender/models_store:/app/models_store
-      - ./module_2_recommender/app:/app/app
-      - ./module_2_recommender/scripts:/app/scripts
-    working_dir: /app
-    restart: unless-stopped
-    networks:
-      - haji_umrah_net
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-      redis-cache:
-        condition: service_started
-
-  # ----------------------------------
-  # MODULE 3: Sentiment & Review Intelligence
-  # ----------------------------------
-  sentiment-dashboard:
-    build:
-      context: ./module_3_sentiment
-    container_name: sentiment-dashboard
-    environment: # [FIX] Tambahkan Timezone
-      - TZ=Asia/Jakarta
-    command: streamlit run dashboard.py --server.port 8501 --server.address 0.0.0.0
-    ports:
-      - "8501:8501"
-    volumes:
-      - ./dummy_data:/dummy_data
-      - ./module_3_sentiment/analysis:/app/analysis
-      - ./module_3_sentiment/scripts:/app/scripts
-      - ./module_3_sentiment/dashboard.py:/app/dashboard.py
-    working_dir: /app
-    restart: unless-stopped
-    networks:
-      - haji_umrah_net
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-
-  sentiment-scheduler:
-    build:
-      context: ./module_3_sentiment
-    container_name: sentiment-scheduler
-    environment: # [FIX] Tambahkan Timezone
-      - TZ=Asia/Jakarta
-    command: python scheduler.py
-    volumes:
-      - ./dummy_data:/dummy_data
-      - ./module_3_sentiment/analysis:/app/analysis
-      - ./module_3_sentiment/scripts:/app/scripts
-      - ./module_3_sentiment/scheduler.py:/app/scheduler.py
-      - huggingface_cache:/root/.cache/huggingface
-    working_dir: /app
-    restart: unless-stopped
-    networks:
-      - haji_umrah_net
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-
-  # ----------------------------------
-  # MODULE 4: Predictive Lead Scoring API
-  # ----------------------------------
-  lead-scoring-api:
-    build:
-      context: ./module_4_lead_scoring
-    container_name: lead-scoring-api
-    environment: # [FIX] Tambahkan Timezone
-      - TZ=Asia/Jakarta
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
-    ports:
-      - "8001:8001"
-    volumes:
-      - ./dummy_data:/dummy_data
-      - ./module_4_lead_scoring/model_store:/app/model_store
-      - ./module_4_lead_scoring/app:/app/app
-      - ./module_4_lead_scoring/scripts:/app/scripts
-    working_dir: /app
-    restart: unless-stopped
-    networks:
-      - haji_umrah_net
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-
-  # ----------------------------------
-  # MODULE 5: Competitor Price Monitor
-  # ----------------------------------
-  # ----------------------------------
-  # MODULE 5: Competitor Price Monitor (Sesuai permintaan, tidak diubah)
-  # ----------------------------------
-  # price-monitor-scheduler:
-  #   build:
-  #     context: ./module_5_pricing_monitor
-  #   container_name: price-monitor-scheduler
-  #   environment: 
-  #     - TZ=Asia/Jakarta
-  #   command: python scheduler.py
-  #   volumes:
-  #     - ./module_5_pricing_monitor/competitor_targets.json:/app/competitor_targets.json
-  #     - ./module_5_pricing_monitor/alerting:/app/alerting
-  #     - ./module_5_pricing_monitor/scrapers:/app/scrapers
-  #     - ./module_5_pricing_monitor/scheduler.py:/app/scheduler.py
-  #   working_dir: /app
-  #   restart: unless-stopped
-  #   networks:
-  #     - haji_umrah_net
-  #   depends_on:
-  #     postgres-db:
-  #       condition: service_healthy
-
-  # price-monitor-dashboard:
-  #   build:
-  #     context: ./module_5_pricing_monitor
-  #   container_name: price-monitor-dashboard
-  #   environment: 
-  #     - TZ=Asia/Jakarta
-  #   command: streamlit run dashboard.py --server.port 8502 --server.address 0.0.0.0
-  #   ports:
-  #     - "8502:8502"
-  #   volumes:
-  #     - ./module_5_pricing_monitor/dashboard.py:/app/dashboard.py
-  #   working_dir: /app
-  #   restart: unless-stopped
-  #   networks:
-  #     - haji_umrah_net
-  #   depends_on:
-  #     postgres-db:
-  #       condition: service_healthy
-
-  # ----------------------------------
-  # MODULE 6: Automated Reporting
-  # ----------------------------------
-  reporting-scheduler:
-    build:
-      context: ./module_6_reporting
-    container_name: reporting-scheduler
-    environment: # [FIX] Tambahkan Timezone
-      - TZ=Asia/Jakarta
-    command: python scheduler.py
-    volumes:
-      - ./module_6_reporting/connectors:/app/connectors
-      - ./module_6_reporting/distribution:/app/distribution
-      - ./module_6_reporting/generators:/app/generators
-      - ./module_6_reporting/reports:/app/reports
-      - ./module_6_reporting/templates:/app/templates
-      - ./module_6_reporting/scheduler.py:/app/scheduler.py
-      - ./module_6_reporting/.env.reporting:/app/.env.reporting
-    working_dir: /app
-    restart: unless-stopped
-    networks:
-      - haji_umrah_net
-    depends_on:
-      postgres-db:
-        condition: service_healthy
-
-  # ----------------------------------
-  # MODULE PAYMENTS (Midtrans)
-  # ----------------------------------
-  payments-api:
-    build:
-      context: ./module_payments
-    container_name: payments-api
-    environment: # [FIX] Tambahkan Timezone
-      - TZ=Asia/Jakarta
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8010 --reload
-    ports:
-      - "8010:8010"
-    volumes:
-      - ./module_payments/app:/app/app
-      - ./module_payments/.env.payments:/app/.env.payments
-    working_dir: /app
-    restart: unless-stopped
-    env_file:
-      - ./module_payments/.env.payments
     networks:
       - haji_umrah_net
     depends_on:

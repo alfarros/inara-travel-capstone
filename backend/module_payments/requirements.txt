@@ -1,7 +1,0 @@
-# /module_payments/requirements.txt
-fastapi
-uvicorn
-midtransclient
-python-dotenv
-sqlalchemy # Untuk interaksi DB (contoh)
-psycopg2-binary # Driver Postgres
