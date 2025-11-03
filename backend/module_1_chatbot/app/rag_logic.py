@@ -1,4 +1,4 @@
-# app/rag_logic.py (Versi Pangkas + Perbaikan Sesuai Rencana Dummy .txt)
+# app/rag_logic.py (Versi Pangkas + Perbaikan Keyword Eskalasi)
 import os
 import requests
 import chromadb
@@ -25,7 +25,7 @@ OLLAMA_MODEL = "gemma2:2b"
 
 # --- Inisialisasi Model & DB ---
 model = None
-collection = None # <-- [FIX] Kita hanya butuh SATU collection
+collection = None 
 try:
     logger.info("Memulai inisialisasi model SentenceTransformer...")
     model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -35,7 +35,6 @@ try:
     client = chromadb.PersistentClient(path="./chroma_db")
     logger.info("✅ ChromaDB Client berhasil dibuat.")
 
-    # [FIX] Gunakan get_or_create_collection untuk 'haji_umrah_kb'
     collection_name = "haji_umrah_kb"
     collection = client.get_or_create_collection(name=collection_name)
     logger.info(f"✅ Collection '{collection_name}' berhasil didapatkan.")
@@ -44,7 +43,7 @@ except Exception as e:
     logger.error(f"FATAL: Error saat inisialisasi model atau ChromaDB: {e}", exc_info=True)
 
 def search_knowledge(query_text: str, n_results: int = 3) -> list[str]:
-    """[FIX] Mencari dokumen relevan dari SATU collection."""
+    """Mencari dokumen relevan dari SATU collection."""
     if collection is None:
         logger.error("search_knowledge dipanggil tapi collection ChromaDB belum siap.")
         return []
@@ -62,20 +61,16 @@ def search_knowledge(query_text: str, n_results: int = 3) -> list[str]:
         return []
 
 # (Fungsi build_prompt, call_groq_api, call_openrouter_api, call_ollama_api, call_ai_with_fallback biarkan sama)
-# ...
 def build_prompt(query: str, context_chunks: list[str]) -> Tuple[str, str]:
-    """Membangun System Prompt dan User Prompt."""
     system_prompt = """Anda adalah asisten virtual ahli untuk agen travel Haji & Umrah.
 Tugas Anda adalah membantu pelanggan dengan pengetahuan mendalam tentang:
 - Ibadah Haji dan Umrah (rukun, tata cara, doa, sejarah, hukum syariat)
 - Paket perjalanan (dari konteks)
 - Review pelanggan (dari konteks)
-
 CARA MENJAWAB:
 1. **PRIORITAS UTAMA**: Gunakan informasi dari "KONTEKS DATABASE" jika tersedia (info paket/review).
 2. **PENGETAHUAN UMUM**: Jika konteks tidak mencukupi ATAU pertanyaan bersifat umum (tata cara haji, doa, dll), gunakan pengetahuan Anda.
 3. **GABUNGAN**: Kombinasikan konteks database dengan pengetahuan umum.
-
 PERATURAN PENTING:
 - JANGAN mengarang harga atau detail paket yang tidak ada di konteks
 - Selalu ramah, informatif, dan menggunakan Bahasa Indonesia yang baik"""
@@ -92,11 +87,9 @@ PERATURAN PENTING:
 Pertanyaan Pelanggan: "{query}"
 ---
 Jawab pertanyaan pelanggan berdasarkan prioritas dan peraturan di atas."""
-    
     return system_prompt, user_prompt
 
 def call_groq_api(system_prompt: str, user_prompt: str) -> Optional[str]:
-    """Memanggil Groq API (Prioritas 1)."""
     if not GROQ_API_KEY or len(GROQ_API_KEY) < 20:
         logger.warning("GROQ_API_KEY tidak dikonfigurasi.")
         return None
@@ -124,7 +117,6 @@ def call_groq_api(system_prompt: str, user_prompt: str) -> Optional[str]:
         return None
 
 def call_openrouter_api(system_prompt: str, user_prompt: str) -> Optional[str]:
-    """Memanggil OpenRouter API (Backup 1)."""
     if not OPENROUTER_API_KEY or "sk-or-" not in OPENROUTER_API_KEY:
         logger.warning("OPENROUTER_API_KEY tidak dikonfigurasi.")
         return None
@@ -157,7 +149,6 @@ def call_openrouter_api(system_prompt: str, user_prompt: str) -> Optional[str]:
         return None
 
 def call_ollama_api(system_prompt: str, user_prompt: str) -> Optional[str]:
-    """Memanggil Ollama API Lokal (Backup 2)."""
     full_prompt = f"{system_prompt}\n\n{user_prompt}"
     payload = {
         "model": OLLAMA_MODEL,
@@ -180,32 +171,31 @@ def call_ollama_api(system_prompt: str, user_prompt: str) -> Optional[str]:
         return None
 
 def call_ai_with_fallback(system_prompt: str, user_prompt: str) -> str:
-    """Memanggil AI dengan fallback mechanism."""
     result = call_groq_api(system_prompt, user_prompt)
     if result: return result
     result = call_openrouter_api(system_prompt, user_prompt)
     if result: return result
     result = call_ollama_api(system_prompt, user_prompt)
     if result: return result
-    
     logger.error("❌ Semua AI provider gagal!")
     return "Mohon maaf, semua layanan AI sedang tidak tersedia. Silakan coba lagi."
-# ...
 
 def should_escalate_to_admin(message: str, context_found: bool) -> Tuple[bool, str]:
     """
-    [LOGIKA BARU] Menentukan apakah message harus di-escalate.
+    [LOGIKA BARU DENGAN PERBAIKAN] Menentukan apakah message harus di-escalate.
     """
     message_lower = message.lower()
     
     # 1. Eskalasi berdasarkan Keyword (Permintaan langsung)
     keyword_triggers = [
         "admin", "customer service", "bicara", "langsung", "manusia", 
-        "paket khusus", "custom package", "keluarga saya", "rombongan"
+        "paket khusus", "custom package", 
+        "keluarga", # <-- [FIX] Mengganti "keluarga saya" menjadi "keluarga"
+        "rombongan"
     ]
     for keyword in keyword_triggers:
         if keyword in message_lower:
-            reason = f"User meminta bicara langsung (keyword: '{keyword}')"
+            reason = f"User meminta penanganan khusus (keyword: '{keyword}')"
             logger.info(f"🚨 Eskalasi (Keyword): {reason}")
             return True, reason
             
@@ -242,7 +232,7 @@ def get_ai_response(
     """
     try:
         # 1. Search knowledge base
-        context_chunks = search_knowledge(message, n_results=3) # <-- [FIX] n_results=3
+        context_chunks = search_knowledge(message, n_results=3) 
         context_found = bool(context_chunks)
         
         # 2. Build prompt
@@ -266,7 +256,7 @@ def get_ai_response(
                 logger.info(f"📢 Notifikasi eskalasi dikirim ke Admin WA")
                 
                 escalation_notice = (
-                    "\n\n⚠️ *Pertanyaan Anda terdeteksi kompleks dan telah diteruskan "
+                    "\n\n⚠️ *Pertanyaan Anda terdeteksi memerlukan penanganan khusus dan telah diteruskan "
                     "ke Customer Service kami.*\n\nAdmin kami akan segera menghubungi Anda "
                     f"(melalui {user_contact if user_contact else 'kontak Anda'}) untuk bantuan lebih lanjut."
                 )
