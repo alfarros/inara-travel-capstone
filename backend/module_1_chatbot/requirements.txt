@@ -40,3 +40,5 @@ sqlalchemy
 psycopg2-binary
 passlib[bcrypt]
 python-jose
+
+redis==5.0.1

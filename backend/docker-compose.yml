@@ -1,4 +1,4 @@
-# /docker-compose.yml (Versi Pangkas)
+# /docker-compose.yml (Versi Pangkas + Perbaikan Redis)
 
 services:
   # ----------------------------------
@@ -14,7 +14,6 @@ services:
       - TZ=Asia/Jakarta
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Pastikan db_schema.sql ada di folder root backend/
       - ./db_schema.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
@@ -32,6 +31,15 @@ services:
     container_name: redis-cache
     environment:
       - TZ=Asia/Jakarta
+    
+    # --- [FIX 1] Tambahkan healthcheck untuk Redis ---
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # ---------------------------------------------
+    
     ports:
       - "6379:6379"
     networks:
@@ -62,9 +70,14 @@ services:
     restart: unless-stopped
     networks:
       - haji_umrah_net
+      
+    # --- [FIX 2] Tambahkan redis-cache ke depends_on ---
     depends_on:
       postgres-db:
         condition: service_healthy
+      redis-cache:
+        condition: service_healthy # Tunggu sampai Redis 'healthy'
+    # ------------------------------------------------
 
 volumes:
   postgres_data:
