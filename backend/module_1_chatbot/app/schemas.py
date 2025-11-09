@@ -1,4 +1,4 @@
-# /module_1_chatbot/app/schemas.py (Versi Pangkas)
+# /module_1_chatbot/app/schemas.py (Versi Diperbaiki)
 from pydantic import BaseModel
 from typing import Optional
 
@@ -14,5 +14,3 @@ class ChatResponse(BaseModel):
     source: str
     escalated: bool
     escalation_reason: Optional[str] = None
-
-# (Semua schema UserCreate, User, dan Token dihapus)

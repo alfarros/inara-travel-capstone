@@ -13,6 +13,7 @@ export interface Package {
   departureCity: string;
 }
 
+
 // Import gambar
 import jamaahImage from "@/assets/jamaah-group.jpg";
 

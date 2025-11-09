@@ -1,15 +1,12 @@
-# /module_1_chatbot/app/main.py (Versi Pangkas)
+# /module_1_chatbot/app/main.py (Versi Diperbaiki)
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import os
 
-# --- Import dari file lain di dalam 'app' ---
 from .rag_logic import get_ai_response
 from .schemas import ChatRequest, ChatResponse
-# (Kita hapus router admin, auth, dan whatsapp)
-# ----------------------------------------------------
 
 # Setup logging
 logging.basicConfig(
@@ -27,13 +24,11 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], # Perlu diatur lebih ketat di produksi
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# (Semua app.include_router dihapus)
 
 @app.get("/")
 async def homepage():
@@ -41,7 +36,7 @@ async def homepage():
 
 # ===== WEB CHAT ENDPOINT =====
 @app.post("/chat", response_model=ChatResponse)
-async def web_chat(request_data: ChatRequest):
+async def web_chat(request_data:ChatRequest):
     try:
         if not request_data.message or not request_data.message.strip():
             raise HTTPException(status_code=400, detail="Pesan tidak boleh kosong.")
@@ -64,7 +59,7 @@ async def web_chat(request_data: ChatRequest):
         )
 
     except HTTPException as http_exc:
-         raise http_exc
+        raise http_exc
     except Exception as e:
         logger.error(f"❌ Error tidak terduga di endpoint /chat: {e}", exc_info=True)
         raise HTTPException(
@@ -85,5 +80,3 @@ async def not_found_exception_handler(request: Request, exc: HTTPException):
         status_code=404,
         content={"detail": f"Resource not found at path: {request.url.path}"},
     )
-    
-# (Sisa file main.py biarkan seperti ini)

@@ -1,4 +1,4 @@
-# app/whatsapp_handler.py (Versi Pangkas - Hanya Mengirim)
+# app/whatsapp_handler.py (Versi Diperbaiki - Hanya Mengirim)
 import logging
 import requests
 import os
@@ -16,7 +16,7 @@ def send_whatsapp_message(phone: str, message: str) -> bool:
     if not FONNTE_API_KEY:
         logger.error("FONNTE_API_KEY tidak diatur. Notifikasi admin gagal.")
         return False
-    
+
     # Bersihkan nomor telepon
     phone = re.sub(r'[^\d]', '', phone)
     if not phone.startswith('62'):
@@ -24,15 +24,15 @@ def send_whatsapp_message(phone: str, message: str) -> bool:
             phone = '62' + phone[1:]
         elif phone.startswith('8'):
             phone = '62' + phone
-    
-    url = "https://api.fonnte.com/send"
+
+    url = "https://api.fonnte.com/send"  # Diperbaiki: Hapus spasi
     headers = {"Authorization": FONNTE_API_KEY}
     payload = {"target": phone, "message": message}
-    
+
     try:
         response = requests.post(url, headers=headers, data=payload, timeout=10)
         response.raise_for_status()
-        
+
         result = response.json()
         if result.get("status") == True or result.get("status") == "success":
             logger.info(f"✅ Pesan (notifikasi) terkirim ke {phone}")
@@ -45,12 +45,12 @@ def send_whatsapp_message(phone: str, message: str) -> bool:
         return False
 
 def notify_admin_whatsapp(
-    user_id: str, 
-    user_contact: Optional[str], 
-    user_message: str, 
+    user_id: str,
+    user_contact: Optional[str],
+    user_message: str,
     reason: str
 ):
-    """Notifikasi admin via WhatsApp (Logika Baru)"""
+    """Notifikasi admin via WhatsApp"""
     if not ADMIN_WHATSAPP:
         logger.warning("ADMIN_WHATSAPP_NUMBER tidak diatur. Tidak bisa eskalasi.")
         return
@@ -68,7 +68,5 @@ def notify_admin_whatsapp(
 {user_message}
 ---
 Harap segera tindak lanjuti."""
-    
-    send_whatsapp_message(ADMIN_WHATSAPP, admin_msg)
 
-# (Semua kode router dan webhook dihapus)
+    send_whatsapp_message(ADMIN_WHATSAPP, admin_msg)

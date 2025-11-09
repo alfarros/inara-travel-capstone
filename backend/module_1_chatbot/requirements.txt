@@ -27,18 +27,13 @@ alembic==1.13.1  # Database migrations
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 
-# Email
-# Built-in smtplib & email modules (no additional package needed)
-
 # Utilities
 pydantic==2.5.3
 pydantic-settings==2.1.0
 
-numpy<2.0
+numpy<2.0.0 # Tambahkan versi
 
-sqlalchemy
-psycopg2-binary
-passlib[bcrypt]
-python-jose
-
+# Redis
 redis==5.0.1
+
+# Pastikan semua dependensi utama ada di sini dengan versi eksplisit

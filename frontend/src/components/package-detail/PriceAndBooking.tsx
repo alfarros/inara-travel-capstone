@@ -33,9 +33,9 @@ Mohon informasi lebih lanjut mengenai ketersediaan kursi dan jadwal keberangkata
 
   return (
     <section className="bg-muted/30 py-12 rounded-lg text-center">
-      <h2 className="text-3xl font-bold mb-4">Investasi Ibadah Anda</h2>
-      <p className="text-5xl font-bold text-primary mb-4">{pkg.price}</p>
-      <p className="text-muted-foreground mb-8">
+      <h2 className="text-2xl font-bold mb-4 mx-4">Investasi Ibadah Anda</h2>
+      <p className="text-3xl font-bold text-primary mb-4">{pkg.price}</p>
+      <p className="text-muted-foreground mb-4">
         *Harga dapat berubah sewaktu-waktu, hubungi kami untuk info terbaru.
       </p>
 
@@ -48,7 +48,7 @@ Mohon informasi lebih lanjut mengenai ketersediaan kursi dan jadwal keberangkata
         Beli Paket via WhatsApp
       </Button>
 
-      <p className="text-sm text-muted-foreground mt-4">
+      <p className="text-sm text-muted-foreground mt-4 mx-8">
         Tim kami akan segera menghubungi Anda melalui WhatsApp untuk melanjutkan
         proses pemesanan.
       </p>
