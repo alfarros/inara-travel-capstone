@@ -1,9 +1,3 @@
-# #################################
-# 1. ABAIKAN MODUL YANG TIDAK DIINGINKAN
-# #################################
-# Tambahkan slash (/) di awal agar hanya folder di root yang diabaikan
-/module_5_pricing_monitor/
-/module_6_reporting/
 
 
 # #################################
@@ -11,8 +5,7 @@
 # #################################
 # Ini akan mengabaikan SEMUA file .env di SEMUA folder
 # Ini MENCEGAH API Key, Password DB, dan Token Anda bocor ke GitHub
-*.env
-.env.*
+
 
 
 # #################################

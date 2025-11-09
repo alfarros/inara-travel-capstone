@@ -76,6 +76,7 @@ def save_chat_history(user_id: str, user_message: str, ai_message: str):
         redis_client.lpush(key, json.dumps({"role": "assistant", "content": ai_message}))
         redis_client.lpush(key, json.dumps({"role": "user", "content": user_message}))
         redis_client.ltrim(key, 0, (HISTORY_MAX_TURNS * 2) - 1)
+        redis_client.expire(key, 14400)
     except Exception as e:
         logger.error(f"Gagal menyimpan history user {user_id} ke Redis: {e}")
 
