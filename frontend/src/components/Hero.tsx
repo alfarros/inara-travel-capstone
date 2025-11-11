@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
-import heroImage from "@/assets/hero-mosque.jpg";
+import heroImage from "/public/assets/hero-mosque.jpg";
 import { useCallback } from "react";
 
 const Hero = () => {

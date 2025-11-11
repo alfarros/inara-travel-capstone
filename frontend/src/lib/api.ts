@@ -1,29 +1,33 @@
 // frontend/src/lib/api.ts
 
 // --- BASE URLS ---
-// Pisahkan base URL untuk modul yang berbeda
 const CHAT_API_BASE_URL = "http://localhost:8008"; // Sesuaikan dengan port backend chatbot Anda
 const PACKAGES_API_BASE_URL = "http://localhost:8009"; // Sesuaikan dengan port backend packages/ulasan Anda
 
 // --- ENDPOINTS ---
 export const chatEndpoint = `${CHAT_API_BASE_URL}/chat`;
-// Tidak perlu mendefinisikan endpoint untuk packages/reviews di sini jika sudah dihandle di fungsi masing-masing
 
 // --- INTERFACES / TYPES ---
 
-// Interfaces untuk Packages & Reviews (Sesuaikan dengan schema dari backend packages_reviews)
+// Interfaces untuk Packages & Reviews (Sesuaikan dengan schema dari backend packages_reviews dan db_schema.sql)
+// Pastikan schema Pydantic dan model SQLAlchemy di backend juga mencerminkan perubahan ini.
 export interface ApiPackage {
   package_id: number;
   name: string; // Berubah dari 'title'
-  description: string | null;
+  duration: string | null; // Kolom baru: durasi dalam bentuk string seperti "9 Hari"
   price: number; // Harga dalam bentuk angka
-  duration_days: number | null; // Berubah dari 'duration'
-  hotel_info: string | null;
+  features: string[] | null; // Kolom baru: Array string untuk features
   image_url: string | null; // Berubah dari 'image'
-  destination: string | null;
-  category: string | null;
-  // Tidak ada 'featured', 'airline', 'departureCity', 'features' di schema backend sebelumnya
-  // Jika Anda ingin menambahkannya ke DB/API, sesuaikan interface ini
+  featured: boolean | null; // Kolom baru: boolean untuk featured
+  description: string | null;
+  airline: string | null; // Kolom baru
+  departure_city: string | null; // Kolom baru: departureCity -> departure_city (snake_case)
+
+  // Kolom lama dari skema awal (bisa tetap ada jika ingin dipertahankan di DB dan API)
+  duration_days: number | null; // Bisa dipertahankan untuk perhitungan
+  hotel_info: string | null; // Bisa dipertahankan
+  destination: string | null; // Bisa dipertahankan
+  category: string | null; // Bisa dipertahankan
 }
 
 export interface ApiReview {
@@ -59,30 +63,20 @@ export interface ChatResponse {
   escalation_reason?: string;
 }
 
-// Interfaces untuk Testimonials (Jika ingin dipindah dari data statis ke API nanti)
-// export interface Testimonial { ... } // Tidak dibuat sekarang
-
 // --- API FUNCTIONS ---
 
 // Fungsi untuk mengambil semua paket
 export const fetchPackages = async (): Promise<ApiPackage[]> => {
-  console.log(
-    "Mengambil data paket dari:",
-    `${PACKAGES_API_BASE_URL}/packages`
-  );
-  try {
-    const response = await fetch(`${PACKAGES_API_BASE_URL}/packages`);
-    console.log("Status Response:", response.status);
-    if (!response.ok) {
-      throw new Error(`Gagal mengambil paket: ${response.statusText}`);
-    }
-    const data = await response.json();
-    console.log("Data Paket:", data); // Log data yang diterima
-    return data.packages;
-  } catch (error) {
-    console.error("Error di fetchPackages:", error);
-    throw error;
+  const response = await fetch(`${PACKAGES_API_BASE_URL}/packages`);
+  if (!response.ok) {
+    throw new Error(`Gagal mengambil paket: ${response.statusText}`);
   }
+  const data = await response.json();
+  // Pastikan struktur respons sesuai { packages: [...] }
+  if (!data || !Array.isArray(data.packages)) {
+    throw new Error("Respons API paket tidak valid.");
+  }
+  return data.packages;
 };
 
 // Fungsi untuk mengambil detail paket
@@ -122,19 +116,5 @@ export const createReview = async (
   const data = await response.json();
   return data;
 };
-
-// Fungsi untuk mengirim pesan chat (digunakan oleh useChat)
-// Ini bisa didefinisikan di sini atau langsung di useChat.ts, tergantung preferensi.
-// Karena useChat.ts sudah mengimpor chatEndpoint, ini cukup sebagai definisi endpoint dan tipe.
-// Fungsi pengiriman utama tetap di useChat.ts
-// export const sendChatMessage = async (chatData: ChatRequest): Promise<ChatResponse> => {
-//   const response = await fetch(chatEndpoint, {
-//     method: 'POST',
-//     headers: { 'Content-Type': 'application/json' },
-//     body: JSON.stringify(chatData),
-//   });
-//   if (!response.ok) throw new Error(`Gagal mengirim pesan: ${response.statusText}`);
-//   return response.json(); // Ini akan mengembalikan ChatResponse
-// };
 
 // Fungsi lain untuk API lainnya bisa ditambahkan di sini

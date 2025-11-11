@@ -1,8 +1,8 @@
 import { LucideIcon } from "lucide-react";
 import { Heart, Users, BookOpen } from "lucide-react";
-import nyamanImage from "@/assets/feature-nyaman.jpg";
-import terbimbingImage from "@/assets/feature-terbimbing.jpg";
-import sunnahImage from "@/assets/feature-sunnah.jpg";
+import nyamanImage from "/public/assets/feature-nyaman.jpg";
+import terbimbingImage from "/public/assets/feature-terbimbing.jpg";
+import sunnahImage from "/public/assets/feature-sunnah.jpg";
 export interface Feature {
     icon: LucideIcon;
     title: string;

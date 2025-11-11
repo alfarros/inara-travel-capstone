@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Shield, Heart, Award } from "lucide-react";
-import founderPhoto from "@/assets/founder-photo.jpg";
+import founderPhoto from "/public/assets/founder-photo.jpg";
 
 const About = () => {
   return (
