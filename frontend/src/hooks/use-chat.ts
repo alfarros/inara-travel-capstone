@@ -1,6 +1,6 @@
 // src/hooks/use-chat.ts
 import { useState, useCallback, useRef, useEffect } from "react";
-import { ChatMessage, ChatRequest } from "@/types/chat";
+import { ChatMessage, ChatRequest } from "@/lib/api";
 import { chatEndpoint } from "@/lib/api";
 
 export const useChat = (userId: string, userEmail?: string) => {

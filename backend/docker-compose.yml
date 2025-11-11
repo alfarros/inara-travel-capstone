@@ -1,9 +1,6 @@
-# /docker-compose.yml (Versi Pangkas + Perbaikan Redis)
-
+# backend/docker-compose.yml
 services:
-  # ----------------------------------
   # SHARED SERVICES
-  # ----------------------------------
   postgres-db:
     image: postgres:14-alpine
     container_name: postgres-db
@@ -31,24 +28,18 @@ services:
     container_name: redis-cache
     environment:
       - TZ=Asia/Jakarta
-    
-    # --- [FIX 1] Tambahkan healthcheck untuk Redis ---
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
-    # ---------------------------------------------
-    
     ports:
       - "6379:6379"
     networks:
       - haji_umrah_net
     restart: unless-stopped
 
-  # ----------------------------------
   # MODULE 1: AI Chatbot
-  # ----------------------------------
   chatbot-api:
     build:
       context: ./module_1_chatbot
@@ -70,14 +61,33 @@ services:
     restart: unless-stopped
     networks:
       - haji_umrah_net
-      
-    # --- [FIX 2] Tambahkan redis-cache ke depends_on ---
     depends_on:
       postgres-db:
         condition: service_healthy
       redis-cache:
-        condition: service_healthy # Tunggu sampai Redis 'healthy'
-    # ------------------------------------------------
+        condition: service_healthy
+
+  # MODULE 2: Packages & Reviews API
+  packages_reviews_api:
+    build:
+      context: ./module_2_packages_reviews
+    container_name: packages_reviews_api
+    environment:
+      - TZ=Asia/Jakarta
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8009 --reload
+    ports:
+      - "8009:8009"
+    volumes:
+      - ./module_2_packages_reviews/app:/app/app
+    env_file:
+      - ./module_2_packages_reviews/.env
+    working_dir: /app
+    restart: unless-stopped
+    networks:
+      - haji_umrah_net
+    depends_on:
+      postgres-db:
+        condition: service_healthy
 
 volumes:
   postgres_data:

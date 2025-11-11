@@ -1,7 +1,7 @@
 // src/pages/Index.tsx
 import Hero from "@/components/Hero";
 import WhyChooseUs from "@/components/WhyChooseUs";
-import Packages from "@/components/Packages";
+import Packages from "@/pages/Packages";
 import Testimonials from "@/components/Testimonials";
 import About from "@/components/About";
 import Partners from "@/components/Partners";
