@@ -27,7 +27,8 @@ class Package(PackageBase):
         from_attributes = True # Ini penting agar Pydantic bisa membaca dari objek SQLAlchemy
 
 class ReviewBase(BaseModel):
-    user_id: Optional[int] = None
+    # user_id: Optional[int] = None # Kita ganti ini
+    reviewer_name: Optional[str] = "Anonim" # Tambahkan field nama reviewer
     review_text: str
     rating: int
 
@@ -38,8 +39,9 @@ class Review(ReviewBase):
     class Config:
         from_attributes = True
 
-class ReviewCreate(ReviewBase):
-    package_id: int
+class ReviewCreate(ReviewBase): # Schema untuk permintaan pembuatan review
+    package_id: int # Diperlukan saat membuat review
+    # Kita hapus user_id, gunakan reviewer_name
 
 class PackageWithReviews(Package):
     reviews: List[Review] = []

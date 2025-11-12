@@ -12,7 +12,6 @@ import Packages from "./pages/Packages";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
-import PaymentTestPage from "./pages/PaymentTest.tsx";
 import { PackageDetailPage } from "./pages/PackageDetail";
 
 const queryClient = new QueryClient({
@@ -39,7 +38,6 @@ const App = () => (
               <Route path="/packages" element={<Packages />} />
               <Route path="/packages/:id" element={<PackageDetailPage />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/payment-test" element={<PaymentTestPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

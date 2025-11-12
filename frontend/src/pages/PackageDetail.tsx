@@ -1,16 +1,23 @@
 // frontend/src/pages/PackageDetail.tsx
 import { useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { fetchPackageDetail, ApiPackageWithReviews } from "@/lib/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query"; // Tambahkan useQueryClient
+import {
+  fetchPackageDetail,
+  ApiPackageWithReviews,
+  createReview as apiCreateReview,
+  ApiReview,
+} from "@/lib/api"; // Impor apiCreateReview dan ApiReview
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, ArrowLeft, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ReviewForm from "@/components/ReviewForm"; // Impor komponen baru
 
 export const PackageDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const packageId = Number(id);
+  const queryClient = useQueryClient(); // Dapatkan instance query client
 
   const {
     data: pkg,
@@ -23,6 +30,25 @@ export const PackageDetailPage = () => {
     enabled: !isNaN(packageId),
     staleTime: 5 * 60 * 1000,
   });
+
+  // Fungsi untuk menangani penambahan review baru
+  const handleReviewAdded = (newReview: ApiReview) => {
+    if (pkg) {
+      // Update cache query 'packageDetail' secara manual
+      queryClient.setQueryData<ApiPackageWithReviews>(
+        ["packageDetail", packageId],
+        (oldData) => {
+          if (!oldData) return oldData; // Jika data lama tidak ada, kembalikan null
+
+          // Buat salinan data lama dan tambahkan review baru ke array reviews
+          return {
+            ...oldData,
+            reviews: [...oldData.reviews, newReview], // Tambahkan review baru
+          };
+        }
+      );
+    }
+  };
 
   if (isLoading)
     return (
@@ -190,8 +216,9 @@ export const PackageDetailPage = () => {
                         className="border-b pb-4 last:border-b-0"
                       >
                         <div className="flex items-center gap-2 mb-1">
+                          {/* Gunakan reviewer_name dari API */}
                           <span className="font-semibold">
-                            User {review.user_id || "Anonim"}
+                            {review.reviewer_name || "Anonim"}
                           </span>
                           <div className="flex">
                             {[...Array(5)].map((_, i) => (
@@ -222,6 +249,11 @@ export const PackageDetailPage = () => {
                     Belum ada ulasan untuk paket ini.
                   </p>
                 )}
+                {/* Tambahkan ReviewForm di sini */}
+                <ReviewForm
+                  packageId={pkg.package_id}
+                  onReviewAdded={handleReviewAdded}
+                />
               </CardContent>
             </Card>
           </div>

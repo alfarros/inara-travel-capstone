@@ -74,8 +74,10 @@ def create_review(review_data: schemas.ReviewCreate, db: Session = Depends(get_d
             raise HTTPException(status_code=404, detail="Paket untuk review ini tidak ditemukan.")
 
         # Buat objek Review SQLAlchemy
+        # Gunakan reviewer_name dari request body, atau default ke "Anonim"
+        reviewer_name = review_data.reviewer_name if review_data.reviewer_name else "Anonim"
         db_review = models.Review(
-            user_id=review_data.user_id,
+            reviewer_name=reviewer_name, # Gunakan reviewer_name
             package_id=review_data.package_id,
             review_text=review_data.review_text,
             rating=review_data.rating
@@ -87,7 +89,7 @@ def create_review(review_data: schemas.ReviewCreate, db: Session = Depends(get_d
         return db_review
     except sqlalchemy.exc.IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Data review tidak valid.")
+        raise HTTPException(status_code=400, detail="Data review tidak valid (rating mungkin tidak sesuai).")
     except Exception as e:
         logger.error(f"❌ Error membuat review: {e}", exc_info=True)
         db.rollback()

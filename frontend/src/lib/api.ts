@@ -32,7 +32,8 @@ export interface ApiPackage {
 
 export interface ApiReview {
   review_id: number;
-  user_id: number | null;
+  reviewer_name: string | null; // Tambahkan ini
+  // user_id: number | null; // Hapus jika tidak digunakan
   package_id: number;
   review_text: string;
   rating: number;
@@ -96,25 +97,27 @@ export const fetchPackageDetail = async (
 };
 
 // Fungsi untuk membuat review baru
-export const createReview = async (
-  reviewData: Omit<ApiReview, "review_id" | "created_at">
-): Promise<ApiReview> => {
+// Fungsi untuk membuat review baru - Perbarui sesuai schema baru
+export const createReview = async (reviewData: Omit<ApiReview, 'review_id' | 'created_at' | 'package_id'> & { package_id: number }): Promise<ApiReview> => {
   const response = await fetch(`${PACKAGES_API_BASE_URL}/reviews`, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify(reviewData),
+    body: JSON.stringify(reviewData), // Kirim reviewer_name, review_text, rating, package_id
   });
 
   if (!response.ok) {
     if (response.status === 404) {
       throw new Error("Paket untuk review ini tidak ditemukan.");
     }
+    if (response.status === 400) {
+      throw new Error("Data review tidak valid (mungkin rating).");
+    }
     throw new Error(`Gagal membuat review: ${response.statusText}`);
   }
   const data = await response.json();
-  return data;
+  return data; // Harusnya mengembalikan ApiReview
 };
 
 // Fungsi lain untuk API lainnya bisa ditambahkan di sini

@@ -1,4 +1,4 @@
--- /db_schema.sql (Versi Diperbarui - Menyesuaikan frontend/data/packages.ts)
+-- /db_schema.sql (Versi Diperbarui 2 - Menyesuaikan frontend/data/packages.ts dan tambahan reviewer_name di reviews)
 
 -- Tabel 1: Packages (Menyesuaikan interface Package frontend)
 CREATE TABLE IF NOT EXISTS packages (
@@ -20,10 +20,11 @@ CREATE TABLE IF NOT EXISTS packages (
     category VARCHAR(100)                   -- Bisa dipertahankan
 );
 
--- Tabel 2: Reviews (Tidak berubah)
+-- Tabel 2: Reviews (Diperbarui: ganti user_id dengan reviewer_name)
 CREATE TABLE IF NOT EXISTS reviews (
     review_id SERIAL PRIMARY KEY,
-    user_id INT,
+    -- user_id INT,                       -- Hapus kolom ini
+    reviewer_name VARCHAR(255) DEFAULT 'Anonim', -- Tambahkan kolom ini
     package_id INT REFERENCES packages(package_id) ON DELETE SET NULL,
     review_text TEXT NOT NULL,
     rating INT CHECK (rating >= 1 AND rating <= 5),
@@ -137,6 +138,8 @@ INSERT INTO packages (
     'Umrah Keluarga'
 );
 
-INSERT INTO reviews (user_id, package_id, review_text, rating) VALUES
-(1, 1, 'Hotelnya bagus dan dekat dengan masjid.', 5),
-(2, 2, 'Makanannya enak dan pemandunya ramah.', 4);
+-- Data Dummy untuk Reviews (Diperbarui: gunakan reviewer_name)
+INSERT INTO reviews (reviewer_name, package_id, review_text, rating) VALUES
+('Bapak Rina Wijaya', 1, 'Hotelnya bagus dan dekat dengan masjid.', 5),
+('Ibu Ahmad Fauzi', 2, 'Makanannya enak dan pemandunya ramah.', 4),
+('Anonim', 1, 'Pelayanannya sangat memuaskan.', 5); -- Contoh ulasan anonim

@@ -32,11 +32,11 @@ class Review(Base):
     __tablename__ = "reviews"
 
     review_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer)
+    # user_id = Column(Integer) # Kita ganti ini
+    reviewer_name = Column(String(255), default="Anonim") # Tambahkan kolom nama reviewer
     package_id = Column(Integer, ForeignKey("packages.package_id"), nullable=True) # ON DELETE SET NULL
     review_text = Column(Text, nullable=False)
     rating = Column(Integer, CheckConstraint('rating >= 1 AND rating <= 5'))
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # Relasi ke tabel packages
     package = relationship("Package", back_populates="reviews")
