@@ -1,4 +1,6 @@
 // src/components/FloatingChatWidget.tsx
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { MessageCircle, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, FormEvent } from "react";
@@ -90,7 +92,39 @@ const FloatingChatWidget = () => {
                       : "bg-gray-100 text-gray-800"
                   }`}
                 >
-                  {chat.text}
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]} // Aktifkan fitur-fitur GFM seperti bullet points
+                    components={{
+                      // Opsi untuk menyesuaikan elemen HTML yang dihasilkan (opsional, tapi bisa membantu styling)
+                      p: ({ node, ...props }) => (
+                        <p {...props} className="mb-1" />
+                      ), // Tambahkan margin bawah ke paragraf
+                      ul: ({ node, ...props }) => (
+                        <ul
+                          {...props}
+                          className="list-disc list-inside ml-4 mb-2"
+                        />
+                      ), // Styling untuk bullet list
+                      ol: ({ node, ...props }) => (
+                        <ol
+                          {...props}
+                          className="list-decimal list-inside ml-4 mb-2"
+                        />
+                      ), // Styling untuk numbered list
+                      li: ({ node, ...props }) => (
+                        <li {...props} className="mb-1" />
+                      ), // Styling untuk item list
+                      strong: ({ node, ...props }) => (
+                        <strong {...props} className="font-bold" />
+                      ), // Styling untuk bold
+                      em: ({ node, ...props }) => (
+                        <em {...props} className="italic" />
+                      ), // Styling untuk italic
+                      // Tambahkan komponen lain jika diperlukan
+                    }}
+                  >
+                    {chat.text}
+                  </ReactMarkdown>
                 </div>
               </div>
             ))}
