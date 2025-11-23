@@ -1,4 +1,4 @@
-# module_1_chatbot/app/rag_logic.py (FIXED - ESCALATION FLOW)
+# module_1_chatbot/app/rag_logic.py (FINAL FIX: ESKALASI & NO GHOST DATA)
 import os
 import requests
 import chromadb
@@ -38,17 +38,17 @@ HISTORY_KEY_PREFIX = "chat_history:"
 HISTORY_MAX_TURNS = 4 
 ESCALATION_KEY_PREFIX = "escalation_pending:"
 ESCALATION_STATE_PREFIX = "escalation_state:" 
-ESCALATION_EXPIRE_SEC = 900 # 15 Menit
+ESCALATION_EXPIRE_SEC = 900
+SQL_CACHE_KEY = "packages_cache"
+SQL_CACHE_TTL = 300
 
 # --- KONFIGURASI API AI ---
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = "llama-3.1-8b-instant" # Pakai model cepat
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_MODEL = "openai/gpt-oss-20b:free"
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434/api/generate")
-OLLAMA_MODEL = "gemma2:2b"
+OPENROUTER_MODEL = "openai/gpt-3.5-turbo"
 
 # --- INISIALISASI MODEL RAG ---
 model = None
@@ -61,16 +61,22 @@ try:
 except Exception as e:
     logger.error(f"FATAL: Error inisialisasi RAG: {e}")
 
-# --- HELPER: DATABASE SQL ---
+# --- SQL QUERY (SUMBER KEBENARAN) ---
 def get_packages_from_sql() -> str:
-    """Mengambil data paket REAL-TIME dari PostgreSQL"""
+    """Mengambil data paket (Cached)"""
+    if redis_client:
+        try:
+            cached = redis_client.get(SQL_CACHE_KEY)
+            if cached: return cached
+        except: pass
+    
     try:
         with get_db() as db:
-            query = text("SELECT name, duration, price, airline, description FROM packages")
+            query = text("SELECT name, duration, price, airline, features, description FROM packages")
             result = db.execute(query).fetchall()
             
             if not result:
-                return "TIDAK ADA DATA PAKET DI DATABASE SAAT INI."
+                return "⚠️ SAAT INI DATA PAKET KOSONG DI DATABASE."
             
             package_list = []
             for row in result:
@@ -78,21 +84,60 @@ def get_packages_from_sql() -> str:
                     price_fmt = f"Rp {int(row.price):,}".replace(",", ".")
                 except:
                     price_fmt = str(row.price)
+                
+                features_str = ", ".join(row.features) if row.features else "-"
 
                 info = (
-                    f"- {row.name} ({row.duration}): {price_fmt}\n"
-                    f"  Maskapai: {row.airline}. Info: {row.description}"
+                    f"📦 {row.name}\n"
+                    f"   - Durasi: {row.duration}\n"
+                    f"   - Harga: {price_fmt}\n"
+                    f"   - Maskapai: {row.airline}\n"
+                    f"   - Hotel/Fasilitas: {features_str}"
                 )
                 package_list.append(info)
             
-            return "\n".join(package_list)
+            result_text = "\n\n".join(package_list)
+            
+            if redis_client:
+                redis_client.set(SQL_CACHE_KEY, result_text, ex=SQL_CACHE_TTL)
+            
+            return result_text
+            
     except Exception as e:
         logger.error(f"❌ SQL Error: {e}")
-        return "Gagal mengambil data database."
+        return "Gagal mengambil data paket dari database."
 
-# --- HELPER: KONTAK & STATE ---
+# --- HELPER LOGIC ---
+def _is_customization_request(query: str, packages_data: str) -> bool:
+    """Cek apakah ini permintaan Custom/Aneh-aneh"""
+    query_lower = query.lower()
+    packages_lower = packages_data.lower()
+    
+    # Keywords yang memicu Custom
+    triggers = [
+        'kustom', 'custom', 'request', 'ubah', 'ganti', 'sesuaikan',
+        'sendiri', 'private', 'rombongan', 'keluarga besar', 'diet',
+        'sakit', 'kursi roda', 'lansia', 'bayi', 'hamil',
+        'turki', 'aqsa', 'eropa', 'dubai', 'mesir' # Destinasi non-standar
+    ]
+    
+    # Cek apakah destinasi tersebut MEMANG TIDAK ADA di data paket SQL
+    for word in triggers:
+        if word in query_lower:
+            # Jika kata tersebut tidak ada di deskripsi paket SQL, berarti ini Custom request
+            if word not in packages_lower:
+                return True
+                
+    return False
+
+def _is_commercial_query(query: str) -> bool:
+    keywords = ['paket', 'harga', 'biaya', 'tarif', 'promo', 'sedia', 'ada apa', 'list', 'daftar']
+    return any(k in query.lower() for k in keywords)
+
+# --- KONTAK & AFFIRMATION (FIXED REGEX) ---
 PHONE_REGEX = re.compile(r'((\+62|62|0)8[1-9][0-9]{7,10})\b')
 EMAIL_REGEX = re.compile(r'[\w\.-]+@[\w\.-]+\.\w+')
+AFFIRMATION_KEYWORDS = {'ya', 'iya', 'ok', 'oke', 'baik', 'boleh', 'lanjut', 'siap', 'mau', 'setuju', 'silakan', 'silahkan', 'gas', 'tolong'}
 
 def _find_dynamic_contact(message: str, default_contact: Optional[str]) -> str:
     phone_match = PHONE_REGEX.search(message)
@@ -102,6 +147,20 @@ def _find_dynamic_contact(message: str, default_contact: Optional[str]) -> str:
     if default_contact: return default_contact
     return "Tidak Diberikan"
 
+def _is_affirmation(msg: str) -> bool:
+    # FIX 1: Ganti tanda baca dengan SPASI agar "boleh,silakan" jadi "boleh silakan"
+    msg_clean = re.sub(r'[^\w\s]', ' ', msg.lower()).strip()
+    
+    # Cek exact match
+    if msg_clean in AFFIRMATION_KEYWORDS: return True
+    
+    # Cek per kata
+    words = msg_clean.split()
+    if any(w in AFFIRMATION_KEYWORDS for w in words): return True
+    
+    return False
+
+# --- STATE MANAGEMENT ---
 def get_escalation_state(user_id: str) -> Optional[str]:
     if not redis_client: return None
     return redis_client.get(f"{ESCALATION_STATE_PREFIX}{user_id}")
@@ -121,7 +180,7 @@ def get_escalation_data(user_id: str) -> Optional[Dict]:
     data = redis_client.get(f"{ESCALATION_KEY_PREFIX}{user_id}")
     return json.loads(data) if data else None
 
-# --- HELPER: CHAT HISTORY ---
+# --- HISTORY ---
 def get_chat_history(user_id: str) -> List[Dict]:
     if not redis_client: return []
     try:
@@ -129,7 +188,7 @@ def get_chat_history(user_id: str) -> List[Dict]:
         hist = [json.loads(x) for x in redis_client.lrange(key, 0, (HISTORY_MAX_TURNS * 2) - 1)]
         hist.reverse()
         return hist
-    except Exception: return []
+    except: return []
 
 def save_chat_history(user_id: str, user_message: str, ai_message: str):
     if not redis_client: return
@@ -138,195 +197,175 @@ def save_chat_history(user_id: str, user_message: str, ai_message: str):
         redis_client.lpush(key, json.dumps({"role": "assistant", "content": ai_message}))
         redis_client.lpush(key, json.dumps({"role": "user", "content": user_message}))
         redis_client.ltrim(key, 0, (HISTORY_MAX_TURNS * 2) - 1)
-    except Exception: pass
+    except: pass
 
-# --- AI LOGIC ---
+# --- RAG SEARCH ---
 def search_knowledge(query: str) -> list[str]:
     if not collection: return []
     try:
-        res = collection.query(query_texts=[query], n_results=3)
+        res = collection.query(query_texts=[query], n_results=2)
         return res['documents'][0] if res['documents'] else []
     except: return []
 
-def build_prompt(query: str, context_chunks: list[str]) -> Tuple[str, str]:
-    sql_data = get_packages_from_sql()
-    rag_context = "\n".join(context_chunks) if context_chunks else "Tidak ada info dokumen."
-
-    system_prompt = f"""Anda adalah 'Asisten Inara', CS Travel Haji & Umrah.
+# --- PROMPT BUILDER (FIXED GHOST DATA) ---
+def build_prompt(query: str, context_chunks: list[str], sql_data: str) -> Tuple[str, str]:
     
-DATA PAKET RESMI (GUNAKAN INI SEBAGAI ACUAN UTAMA):
-===================================================
-{sql_data}
-===================================================
+    # Deteksi Intent
+    is_commercial = _is_commercial_query(query)
+    is_custom = _is_customization_request(query, sql_data)
 
-INSTRUKSI:
-1. Jika user tanya harga/paket, WAJIB pakai data di atas. JANGAN halusinasi/mengarang paket lain.
-2. Jika paket tidak ada di data (misal: Turki, Aqsa), tawarkan ESKALASI ke admin.
-3. Jawab singkat, padat, ramah.
+    # --- LOGIC 1: CUSTOM REQUEST ---
+    if is_custom:
+        # Prompt khusus untuk menghandle penolakan halus dan tawaran eskalasi
+        system_prompt = """Anda adalah 'Asisten Inara'.
+Tugas: Mengidentifikasi kebutuhan khusus user yang TIDAK ADA di daftar paket standar.
+
+INSTRUKSI PENTING:
+1. Jangan mencoba menjual paket yang tidak sesuai.
+2. Akui kebutuhan user (misal: "Saya mengerti Anda butuh paket Turkey...").
+3. Jelaskan bahwa paket tersebut belum tersedia di sistem, TAPI tim Admin bisa mengaturnya.
+4. AKHIRI dengan tawaran menghubungkan ke Admin.
+
+Contoh Respon:
+"Saat ini paket tersebut belum tersedia di katalog sistem kami. Namun, untuk kebutuhan khusus seperti ini, tim Admin kami bisa membantunya secara manual. Apakah boleh saya hubungkan Anda ke Admin?"
 """
-    user_prompt = f"""Info Dokumen: {rag_context}\n\nPertanyaan: "{query}" """
+        rag_context = "" # Kosongkan RAG biar tidak halusinasi
+
+    # --- LOGIC 2: TANYA PAKET (COMMERCIAL) ---
+    elif is_commercial:
+        # FIX 2: JANGAN GUNAKAN RAG CONTEXT DISINI! 
+        # Kita hanya mau pakai SQL Data agar 'Paket Haji Plus' (dummy) tidak muncul.
+        rag_context = "" 
+        
+        system_prompt = f"""Anda adalah 'Asisten Inara'.
+Berikut adalah KATALOG RESMI yang tersedia saat ini (Live Database):
+
+{sql_data}
+
+ATURAN MENJAWAB:
+1. HANYA sebutkan paket yang tertulis di atas.
+2. JANGAN sebutkan paket lain (seperti Haji Plus, Turki, Eropa) jika tidak ada di daftar di atas.
+3. Jika user tanya paket yang tidak ada, katakan tidak ada.
+4. Tampilkan dengan format rapi (Nama, Harga, Durasi).
+"""
+
+    # --- LOGIC 3: TANYA UMUM (RAG AKTIF) ---
+    else:
+        # RAG dipakai hanya untuk pertanyaan umum (doa, sejarah, tips)
+        rag_text = "\n".join(context_chunks) if context_chunks else "Tidak ada info."
+        rag_context = f"Referensi Pengetahuan:\n{rag_text}"
+        
+        system_prompt = """Anda adalah 'Asisten Inara'. 
+Jawab pertanyaan seputar ibadah Haji & Umrah dengan ramah dan singkat berdasarkan referensi yang diberikan."""
+
+    # Final User Prompt
+    user_prompt = f"""{rag_context}
+
+Pertanyaan User: "{query}"
+"""
     return system_prompt, user_prompt
 
+# --- AI CALL ---
 def call_ai_with_fallback(sys_prompt: str, usr_prompt: str, history: List[Dict]) -> str:
-    # 1. Try Groq
+    msgs = [{"role": "system", "content": sys_prompt}] + history + [{"role": "user", "content": usr_prompt}]
+    
+    # Groq (Fast)
     if GROQ_API_KEY:
         try:
-            msgs = [{"role": "system", "content": sys_prompt}] + history + [{"role": "user", "content": usr_prompt}]
             res = requests.post(GROQ_URL, headers={"Authorization": f"Bearer {GROQ_API_KEY}"}, 
-                                json={"model": GROQ_MODEL, "messages": msgs, "temperature": 0.1}, timeout=10)
+                                json={"model": GROQ_MODEL, "messages": msgs, "temperature": 0.1}, timeout=8)
             if res.status_code == 200: return res.json()["choices"][0]["message"]["content"]
         except: pass
-    
-    # 2. Try OpenRouter
+
+    # OpenRouter (Backup)
     if OPENROUTER_API_KEY:
         try:
-            msgs = [{"role": "system", "content": sys_prompt}] + history + [{"role": "user", "content": usr_prompt}]
             res = requests.post(OPENROUTER_URL, headers={"Authorization": f"Bearer {OPENROUTER_API_KEY}"},
-                                json={"model": OPENROUTER_MODEL, "messages": msgs}, timeout=20)
+                                json={"model": OPENROUTER_MODEL, "messages": msgs}, timeout=15)
             if res.status_code == 200: return res.json()["choices"][0]["message"]["content"]
         except: pass
         
-    return "Maaf, sistem sedang sibuk."
+    return "Maaf, sedang ada gangguan koneksi AI."
 
-# --- LOGIC ESKALASI (IMPROVED) ---
-def _is_affirmation(msg: str) -> bool:
-    """Deteksi kata setuju/afirmasi dengan lebih akurat"""
-    msg_clean = re.sub(r'[^\w\s]', '', msg.lower()).strip()
-    
-    # Daftar kata affirm (termasuk typo umum)
-    affirm_keywords = [
-        'ya', 'iya', 'ok', 'oke', 'okey', 'okay', 'baik', 'boleh', 
-        'lanjut', 'siap', 'tolong', 'silakan', 'silahkan', 'mau', 
-        'setuju', 'saya mau', 'iya boleh', 'ya boleh', 'bolej'  # typo umum
-    ]
-    
-    return any(kw in msg_clean for kw in affirm_keywords)
-
-def _is_negation(msg: str) -> bool:
-    """Deteksi kata tolak/negasi"""
-    msg_clean = msg.lower()
-    negate_keywords = ['tidak', 'nggak', 'engga', 'gak', 'batal', 'nanti', 'jangan', 'ndak']
-    return any(kw in msg_clean for kw in negate_keywords)
-
-def should_escalate(msg: str, ai_res: str) -> Tuple[bool, str]:
-    """Cek apakah perlu eskalasi"""
-    msg = msg.lower()
-    ai_res = ai_res.lower()
-    
-    # Trigger kata kunci dari user
-    if any(x in msg for x in ["admin", "custom", "kustom", "keluarga", "mobil", "private"]): 
-        return True, "Keyword User"
-    
-    # Trigger dari AI response
-    if "bagaimana?" in ai_res and ("hubungkan" in ai_res or "admin" in ai_res): 
-        return True, "AI Offer"
-    
-    return False, ""
-
-# ==========================================
-# MAIN HANDLER (FUNGSI UTAMA - FIXED)
-# ==========================================
+# --- MAIN LOGIC ---
 def get_ai_response(user_id: str, message: str, channel: str = "web", user_contact: Optional[str] = None) -> Dict:
     try:
-        # 1. CEK STATE SAAT INI
+        # 1. CEK STATE ESKALASI
         state = get_escalation_state(user_id)
         
-        # Log untuk debugging
-        logger.info(f"🔍 User: {user_id} | State: {state} | Message: {message}")
-        
-        # ---------------------------------------------------------
-        # CASE A: STATE = MENUNGGU KONTAK (AWAITING_CONTACT)
-        # ---------------------------------------------------------
+        # A. MENUNGGU KONTAK
         if state == "AWAITING_CONTACT":
             contact = _find_dynamic_contact(message, user_contact)
-            
             if contact != "Tidak Diberikan":
-                # Kirim ke Admin
                 data = get_escalation_data(user_id) or {}
-                notify_admin_whatsapp(user_id, contact, data.get("original_message", message), data.get("reason", "Input Kontak"))
-                
-                # Selesai
+                notify_admin_whatsapp(user_id, contact, data.get("original_message", message), "Kontak Diterima")
                 clear_escalation_state(user_id)
-                res = "Terima kasih! Kontak Anda sudah diterima. Tim Admin kami akan segera menghubungi Anda via WhatsApp. 🙏"
+                res = "Terima kasih! Data kontak sudah diterima. Tim kami akan segera menghubungi via WhatsApp. 🙏"
                 save_chat_history(user_id, message, res)
                 return {"response": res, "source": "System", "escalated": True, "escalation_reason": "Selesai"}
             else:
-                # User tidak kasih format kontak yg benar
-                res = "Mohon maaf, saya membutuhkan Nomor WhatsApp atau Email Anda untuk diteruskan ke admin.\n\nContoh:\n- 081234567890\n- email@example.com"
-                return {"response": res, "source": "System", "escalated": True}
+                return {"response": "Mohon informasikan Nomor WhatsApp atau Email Anda (Contoh: 0812xxxx).", "source": "System", "escalated": True}
 
-        # ---------------------------------------------------------
-        # CASE B: STATE = MENUNGGU KONFIRMASI (AWAITING_CONFIRM)
-        # ---------------------------------------------------------
+        # B. MENUNGGU KONFIRMASI (DISINI TADI ERORNYA)
         if state == "AWAITING_CONFIRM":
-            logger.info(f"📝 Masuk state AWAITING_CONFIRM untuk user {user_id}")
-            
-            # Cek apakah user setuju
             if _is_affirmation(message):
-                logger.info(f"✅ User SETUJU eskalasi")
+                # User setuju ("Boleh, silakan")
+                set_escalation_state(user_id, "AWAITING_CONTACT", get_escalation_data(user_id))
                 
-                # Update state ke AWAITING_CONTACT
-                data = get_escalation_data(user_id) or {"original_message": message, "reason": "Custom Paket"}
-                set_escalation_state(user_id, "AWAITING_CONTACT", data)
-                
-                # RESPON LANGSUNG MINTA KONTAK
-                res = "Baik, saya akan sambungkan Anda ke tim Admin kami. 😊\n\nBoleh dibantu informasikan Nomor WhatsApp atau Email Anda yang aktif?"
-                save_chat_history(user_id, message, res)
-                
-                return {
-                    "response": res, 
-                    "source": "System", 
-                    "escalated": True,
-                    "escalation_reason": "User menyetujui eskalasi"
-                }
-            
-            elif _is_negation(message):
-                logger.info(f"❌ User MENOLAK eskalasi")
-                # User menolak -> Hapus state, lanjut chat biasa
-                clear_escalation_state(user_id)
-                res = "Baik, tidak masalah. Apakah ada yang bisa saya bantu terkait paket yang sudah tersedia?"
-                save_chat_history(user_id, message, res)
-                return {"response": res, "source": "System", "escalated": False}
-            
+                # Langsung return response minta WA
+                quick_res = "Baik. Boleh dibantu informasikan Nomor WhatsApp atau Email Anda yang aktif?"
+                save_chat_history(user_id, message, quick_res)
+                return {"response": quick_res, "source": "System", "escalated": True}
             else:
-                # User nanya hal lain, anggap sebagai penolakan halus
-                logger.info(f"⚠️ User response ambigu, anggap penolakan")
+                # User nolak/ngomong lain, hapus state dan lanjut ke normal flow
                 clear_escalation_state(user_id)
-                # Lanjut ke flow normal di bawah
 
-        # ---------------------------------------------------------
-        # CASE C: NORMAL CHAT FLOW (RAG + SQL)
-        # ---------------------------------------------------------
-        history = get_chat_history(user_id)
+        # 2. NORMAL FLOW
+        sql_data = get_packages_from_sql()
         context_chunks = search_knowledge(message)
+        history = get_chat_history(user_id)
         
-        # Build Prompt (Disini SQL Data dimasukkan)
-        sys_prompt, usr_prompt = build_prompt(message, context_chunks)
+        # Build Prompt (Dengan filter ghost data)
+        sys_prompt, usr_prompt = build_prompt(message, context_chunks, sql_data)
         
         # Call AI
         response_text = call_ai_with_fallback(sys_prompt, usr_prompt, history)
         
         # Cek Trigger Eskalasi Baru
-        escalated, reason = should_escalate(message, response_text)
+        escalated = False
+        reason = None
         
+        # Deteksi Custom Request (via Helper)
+        if _is_customization_request(message, sql_data):
+            escalated = True
+            reason = "Permintaan Custom"
+        
+        # Deteksi Keyword User Minta Admin
+        if "admin" in message.lower() and "hubun" in message.lower():
+            escalated = True
+            reason = "Request User"
+
+        # Deteksi Jawaban AI (AI menawarkan bantuan)
+        if "hubungkan" in response_text.lower() and "admin" in response_text.lower() and "bagaimana" in response_text.lower():
+            escalated = True
+            reason = "AI Offer"
+
         if escalated:
-            # Jika AI belum menawarkan secara eksplisit, tambahkan kalimat penawaran
-            if "bagaimana?" not in response_text.lower() and "hubungkan" not in response_text.lower():
-                response_text += "\n\nUntuk kebutuhan ini, saya bisa sambungkan Anda ke tim Admin kami. Bagaimana?"
+            # Pastikan kalimat tanya ada
+            if "boleh saya" not in response_text.lower() and "bagaimana" not in response_text.lower():
+                response_text += "\n\nApakah boleh saya hubungkan Anda ke Admin untuk detailnya?"
             
-            # Simpan state menunggu konfirmasi user
             set_escalation_state(user_id, "AWAITING_CONFIRM", {"original_message": message, "reason": reason})
-            logger.info(f"🔔 Set state AWAITING_CONFIRM untuk user {user_id}")
 
         save_chat_history(user_id, message, response_text)
         
         return {
             "response": response_text,
-            "source": "Hybrid (SQL+AI)",
+            "source": "Hybrid",
             "escalated": escalated,
             "escalation_reason": reason
         }
 
     except Exception as e:
-        logger.error(f"❌ System Error: {e}", exc_info=True)
-        return {"response": "Maaf, terjadi kesalahan sistem.", "source": "Error", "escalated": False}
+        logger.error(f"Error: {e}")
+        return {"response": "Maaf, sistem sedang sibuk.", "source": "Error", "escalated": False}
