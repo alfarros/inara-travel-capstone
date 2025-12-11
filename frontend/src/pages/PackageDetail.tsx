@@ -179,7 +179,8 @@ export const PackageDetailPage = () => {
                     </div>
                     <div>
                       <span className="font-medium">Berangkat dari:</span>
-                      <p className="text-muted-foreground">-</p>
+                      <p className="text-muted-foreground">
+                        {pkg.departure_city || "Belum Ditentukan"}</p>
                     </div>
                     <div>
                       <span className="font-medium">Harga Mulai:</span>
