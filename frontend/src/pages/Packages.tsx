@@ -31,6 +31,7 @@ export default function Packages() {
         initialPackages={packages}
         showLoadMore={true}
         limit={3}
+        title="Paket Umrah"
       />
     </div>
   );

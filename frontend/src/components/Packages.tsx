@@ -15,12 +15,14 @@ interface PackagesSectionProps {
   initialPackages: ApiPackage[]; // Terima data dari luar
   showLoadMore?: boolean;
   limit?: number;
+  title?: string;
 }
 
 const PackagesSection: React.FC<PackagesSectionProps> = ({
   initialPackages,
   showLoadMore = false,
   limit = 3,
+  title = "Paket Umrah Pilihan",
 }) => {
   const [visibleCount, setVisibleCount] = useState(limit);
 
@@ -140,7 +142,7 @@ const PackagesSection: React.FC<PackagesSectionProps> = ({
             id="packages-heading"
             className="text-3xl md:text-5xl font-serif font-bold text-primary mb-4"
           >
-            Paket Umrah Pilihan
+            {title}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Pilih paket yang sesuai dengan kebutuhan dan budget Anda
