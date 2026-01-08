@@ -1,112 +1,84 @@
+# 🕋 Inara Travel - Intelligent Travel Platform
 
-```
-inara-travel-capstone
-├─ backend
-│  ├─ .dockerignore
-│  ├─ db_schema.sql
-│  ├─ docker-compose.yml
-│  ├─ dummy_data
-│  │  ├─ interactions.csv
-│  │  ├─ leads.csv
-│  │  ├─ packages.csv
-│  │  └─ reviews.csv
-│  ├─ module_1_chatbot
-│  │  ├─ app
-│  │  │  ├─ database.py
-│  │  │  ├─ main.py
-│  │  │  ├─ rag_logic.py
-│  │  │  ├─ schemas.py
-│  │  │  ├─ whatsapp_handler.py
-│  │  │  └─ __init__.py
-│  │  ├─ chroma_db
-│  │  │  ├─ b6a303a9-0b88-43f2-8e8d-266f9351e48e
-│  │  │  │  ├─ data_level0.bin
-│  │  │  │  ├─ header.bin
-│  │  │  │  ├─ length.bin
-│  │  │  │  └─ link_lists.bin
-│  │  │  └─ chroma.sqlite3
-│  │  ├─ Dockerfile
-│  │  ├─ knowledge_base
-│  │  │  ├─ 01_packages.txt
-│  │  │  └─ 02_faq.txt
-│  │  ├─ requirements.txt
-│  │  └─ scripts
-│  │     ├─ ingest_knowledge.py
-│  │     └─ __init__.py
-│  ├─ module_2_packages_reviews
-│  │  ├─ app
-│  │  │  ├─ database.py
-│  │  │  ├─ main.py
-│  │  │  ├─ models.py
-│  │  │  ├─ schemas.py
-│  │  │  └─ __init__.py
-│  │  ├─ Dockerfile
-│  │  └─ requirements.txt
-│  └─ README.md
-└─ frontend
-   ├─ bun.lockb
-   ├─ components.json
-   ├─ eslint.config.js
-   ├─ index.html
-   ├─ package-lock.json
-   ├─ package.json
-   ├─ postcss.config.js
-   ├─ public
-   │  ├─ android-chrome-192x192.png
-   │  ├─ android-chrome-512x512.png
-   │  ├─ apple-touch-icon.png
-   │  ├─ assets
-   │  │  ├─ feature-nyaman.jpg
-   │  │  ├─ feature-sunnah.jpg
-   │  │  ├─ feature-terbimbing.jpg
-   │  │  ├─ founder-photo.jpg
-   │  │  ├─ hero-mosque.jpg
-   │  │  └─ jamaah-group.jpg
-   │  ├─ favicon.ico
-   │  ├─ logo-inara.png
-   │  ├─ placeholder.svg
-   │  └─ robots.txt
-   ├─ README.md
-   ├─ src
-   │  ├─ App.tsx
-   │  ├─ components
-   │  │  ├─ About.tsx
-   │  │  ├─ FloatingChatWidget.tsx
-   │  │  ├─ Footer.tsx
-   │  │  ├─ Hero.tsx
-   │  │  ├─ Navbar.tsx
-   │  │  ├─ Packages.tsx
-   │  │  ├─ Partners.tsx
-   │  │  ├─ ReviewForm.tsx
-   │  │  ├─ Testimonials.tsx
-   │  │  ├─ ui
-   │  │  │  ..tetap sama
-   │  │  └─ WhyChooseUs.tsx
-   │  ├─ data
-   │  │  ├─ features.ts
-   │  │  ├─ partners.ts
-   │  │  └─ testimonials.ts
-   │  ├─ hooks
-   │  │  ├─ use-chat.ts
-   │  │  ├─ use-mobile.tsx
-   │  │  └─ use-toast.ts
-   │  ├─ index.css
-   │  ├─ lib
-   │  │  ├─ api.ts
-   │  │  └─ utils.ts
-   │  ├─ main.tsx
-   │  ├─ pages
-   │  │  ├─ About.tsx
-   │  │  ├─ Contact.tsx
-   │  │  ├─ Index.tsx
-   │  │  ├─ NotFound.tsx
-   │  │  ├─ PackageDetail.tsx
-   │  │  └─ Packages.tsx
-   │  └─ vite-env.d.ts
-   ├─ tailwind.config.ts
-   ├─ tsconfig.app.json
-   ├─ tsconfig.json
-   ├─ tsconfig.node.json
-   └─ vite.config.ts
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![OpenAI](https://img.shields.io/badge/RAG_AI-412991?style=for-the-badge&logo=openai&logoColor=white)
 
+> **Inara Travel Capstone** adalah platform travel umrah/wisata modern yang mengintegrasikan website pemesanan paket dengan **AI Chatbot** cerdas untuk melayani calon jamaah secara otomatis (24/7).
+
+---
+
+## 🏗️ Architecture Overview
+
+Project ini dibangun menggunakan arsitektur modular yang terbagi menjadi tiga komponen utama:
+
+1.  **Frontend (Client Side):** Single Page Application (SPA) yang responsif dan cepat.
+2.  **Backend Module 1 (AI Chatbot):** Layanan cerdas berbasis RAG (Retrieval-Augmented Generation) untuk menjawab pertanyaan user via WhatsApp/Web Chat.
+3.  **Backend Module 2 (Core System):** API untuk manajemen paket wisata, review, dan data pelanggan.
+
+---
+
+## 🌟 Fitur Unggulan
+
+### 🤖 1. AI-Powered Assistant (RAG)
+Tidak seperti chatbot biasa, asisten virtual Inara Travel menggunakan teknologi **RAG (Retrieval-Augmented Generation)** dengan **ChromaDB**.
+* **Context Aware:** Bot memahami detail paket wisata yang tersedia di database.
+* **WhatsApp Integration:** Menangani pertanyaan leads langsung dari WhatsApp.
+* **Automated Q&A:** Menjawab pertanyaan seputar harga, jadwal, dan fasilitas secara instan.
+
+### 📦 2. Travel Management System
+* **Katalog Paket:** Tampilan paket umrah/wisata dengan detail itinerary.
+* **Review System:** User dapat memberikan ulasan layanan.
+* **Lead Capture:** Integrasi data calon jamaah potensial.
+
+### 🎨 3. Modern User Interface
+* Dibangun dengan **React + TypeScript + Vite**.
+* Desain responsif dan estetik menggunakan **Tailwind CSS**.
+* Komponen UI interaktif (Floating Chat Widget, Hero Section, dll).
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+* **Framework:** React (Vite)
+* **Language:** TypeScript
+* **Styling:** Tailwind CSS, Shadcn UI
+* **State Management:** React Hooks
+
+### Backend & AI
+* **Core Language:** Python
+* **AI Framework:** LangChain / LlamaIndex (Logic RAG)
+* **Vector Database:** ChromaDB (untuk penyimpanan knowledge base AI)
+* **Database:** PostgreSQL / SQLite
+* **Infrastructure:** Docker & Docker Compose
+
+---
+
+## 🚀 Cara Instalasi (Local Development)
+
+Pastikan Anda sudah menginstall [Docker](https://www.docker.com/) dan [Node.js](https://nodejs.org/).
+
+### 1. Clone Repository
+```bash
+git clone [https://github.com/alfarros/inara-travel-capstone.git](https://github.com/alfarros/inara-travel-capstone.git)
+cd inara-travel-capstone
 ```
+
+### 2. Menjalankan Backend (via Docker)
+```bash
+cd backend
+docker-compose up --build
+```
+
+### 3. Menjalankan Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Untuk lebih lanjut bisa lihat di Web :
+https://inara-travel.vercel.app/
